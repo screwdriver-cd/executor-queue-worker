@@ -39,7 +39,9 @@
     "eslint-config-screwdriver": "^2.0.9",
     "jenkins-mocha": "^4.0.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "node-resque": "^4.0.7"
+  },
   "release": {
     "debug": false,
     "verifyConditions": {
