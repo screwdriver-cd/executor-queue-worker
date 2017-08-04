@@ -1,80 +1,78 @@
 'use strict';
 
 const NR = require('node-resque');
-
-// SET UP THE CONNECTION
 const connectionDetails = {
     pkg: 'ioredis',
-    host: 'redishost',
-    password: null,
-    port: 1234,
+    host: process.env.REDIS_HOST,
+    password: process.env.REDIS_PASSWORD,
+    port: process.env.REDIS_PORT,
     database: 0
 };
-
-// DEFINE YOUR WORKER TASKS
 const jobs = {
     start: {
-        plugins: ['jobLock', 'retry'],
-        pluginOptions: {
-            jobLock: {},
-            retry: {
-                retryLimit: 3,
-                retryDelay: (1000 * 5)
-            }
-        },
-        /* config looks like this
-            executor:
-                name: k8s-vm
-                options:
-                    kubernetes: ...
-            buildConfig:
-                apiUri:
-                buildId:
-                container:
-                token:
+        /**
+         * Function to run for 'start'
+         * @method perform
+         * @param  {Object}     config                      config passed in from executor-queue
+         * @param  {Object}     config.executor             config for the executor
+         * @param  {String}     config.executor.name        executor name
+         * @param  {Object}     config.executor.options     options to pass into executor's constructor
+         * @param  {Object}     config.buildConfig          buildConfig needed for executor.start
+         *                                                  This might include apiUri, buildId, container, token
          */
-        perform: (config, callback) => {
-            // eslint-disable-next-line
-            const ExecutorPlugin = require(`screwdriver-executor-${config.executor.name}`);
-            const executor = new ExecutorPlugin(config.executor.options);
+        perform: (config, callback) =>
+            new Promise((resolve) => {
+                // eslint-disable-next-line
+                const ExecutorPlugin = require(`screwdriver-executor-${config.executor.name}`);
+                const executor = new ExecutorPlugin(config.executor.options);
 
-            return executor.start(config.buildConfig)
+                resolve(executor);
+            })
+            .then(executor => executor.start(config.buildConfig))
             .then(() => callback(null))
-            .catch(err => callback(err));
-        }
+            .catch(err => callback(err))
     }
 };
 
-// START A WORKER
-// eslint-disable-next-line
-const worker = new NR.multiWorker({
+// eslint-disable-next-line new-cap
+const multiWorker = new NR.multiWorker({
     connection: connectionDetails,
-    queues: ['builds'] },
-    jobs);
+    queues: ['builds'],
+    minTaskProcessors: 1,
+    maxTaskProcessors: 10,
+    checkTimeout: 1000,
+    maxEventLoopDelay: 10,
+    toDisconnectProcessors: true
+}, jobs);
 
-worker.connect(() => {
-    worker.workerCleanup(); // optional: cleanup any previous improperly shutdown workers on this host
-    worker.start();
-});
+/* eslint-disable no-console */
+multiWorker.on('start', workerId =>
+    console.log(`worker[${workerId}] started`));
+multiWorker.on('end', workerId =>
+    console.log(`worker[${workerId}] ended`));
+multiWorker.on('cleaning_worker', (workerId, worker, pid) =>
+    console.log(`cleaning old worker ${worker} pid ${pid}`));
+multiWorker.on('poll', (workerId, queue) =>
+    console.log(`worker[${workerId}] polling ${queue}`));
+multiWorker.on('job', (workerId, queue, job) =>
+    console.log(`worker[${workerId}] working job ${queue} ${JSON.stringify(job)}}`));
+multiWorker.on('reEnqueue', (workerId, queue, job, plugin) =>
+    console.log(`worker[${workerId}] reEnqueue job (${plugin}) ${queue} ${JSON.stringify(job)}`));
+multiWorker.on('success', (workerId, queue, job, result) =>
+    console.log(`worker[${workerId}] ${job} success ${queue} ${JSON.stringify(job)} >> ${result}`));
+multiWorker.on('failure', (workerId, queue, job, failure) =>
+    console.error(`worker[${workerId}] ${job} failure ${queue}
+        ${JSON.stringify(job)} >> ${failure}`));
+multiWorker.on('error', (workerId, queue, job, error) =>
+    console.error(`worker[${workerId}] error ${queue} ${JSON.stringify(job)} >> ${error}`));
+multiWorker.on('pause', workerId =>
+    console.log(`worker[${workerId}] paused`));
 
-// REGESTER FOR EVENTS
-worker.on('start', () => console.log(
-    'worker started'));
-worker.on('end', () => console.log(
-    'worker ended'));
-worker.on('cleaning_worker', (w, pid) => console.log(
-    `cleaning old worker ${w} with pid ${pid}`));
-worker.on('poll', queue => console.log(
-    `worker polling ${queue}`));
-worker.on('job', (queue, job) => console.log(
-    `working job ${queue} ${JSON.stringify(job)}`));
-worker.on('reEnqueue', (queue, job, plugin) => console.log(
-    `reEnqueue job (${plugin}) ${queue} ${JSON.stringify(job)}`));
-worker.on('success', (queue, job, result) => console.log(
-    `job success ${queue} ${JSON.stringify(job)} >> ${result}`));
-worker.on('failure', (queue, job, failure) => console.log(
-    `job failure ${queue} ${JSON.stringify(job)} >> ${failure}`));
-worker.on('error', (queue, job, error) => console.log(
-    `error ${queue} ${JSON.stringify(job)} >> ${error}`));
-worker.on('pause', () => console.log(
-    'worker paused'));
+// multiWorker emitters
+multiWorker.on('internalError', error =>
+    console.error(error));
+multiWorker.on('multiWorkerAction', (verb, delay) =>
+    console.log(`*** checked for worker status: ${verb} (event loop delay: ${delay}ms)`));
+/* eslint-disable no-console */
+
+multiWorker.start();
