@@ -1,5 +1,6 @@
 workflow:
     - publish
+    - prod
 
 shared:
     image: node:6
@@ -10,12 +11,38 @@ jobs:
             - install: npm install
             - test: npm test
 
+    # Publish the package to GitHub and build docker image
     publish:
         steps:
+            - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
             - install: npm install semantic-release
             - publish: npm run semantic-release
+            - docker: ./ci/docker.sh
+        environment:
+            # Docker hub repo
+            DOCKER_REPO: screwdrivercd/executor-queue-worker
         secrets:
             # Publishing to NPM
             - NPM_TOKEN
             # Pushing tags to Git
             - GH_TOKEN
+            # Trigger a Docker Hub build
+            - DOCKER_TRIGGER
+
+    # Deploy to our prod environment and run tests
+    prod:
+        steps:
+            - setup-ci: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci
+            - get-tag: ./ci/git-latest.sh
+            - wait-docker: DOCKER_TAG=`cat VERSION` ./ci/docker-wait.sh
+            - deploy-k8s: K8S_TAG=`cat VERSION` ./ci/k8s-deploy.sh
+            - test: echo Put acceptance tests here
+        environment:
+            DOCKER_REPO: screwdrivercd/executor-queue-worker
+            K8S_CONTAINER: screwdrivercd/executor-queue-worker
+            K8S_IMAGE: screwdrivercd/executor-queue-worker
+            K8S_HOST: api.k8s.screwdriver.cd
+            K8S_DEPLOYMENT: queue-worker
+        secrets:
+            # Talking to Kubernetes
+            - K8S_TOKEN
