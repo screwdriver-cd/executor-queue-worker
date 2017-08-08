@@ -1,7 +1,7 @@
 {
-  "name": "screwdriver-executor-queue-worker",
+  "name": "screwdriver-queue-worker",
   "version": "1.0.0",
-  "description": "Create executor queue worker(s)",
+  "description": "Create queue worker(s)",
   "main": "index.js",
   "scripts": {
     "pretest": "eslint .",
@@ -39,6 +39,7 @@
     "eslint-config-screwdriver": "^3.0.0"
   },
   "dependencies": {
+    "ascallback": "^1.1.1",
     "node-resque": "^4.0.7",
     "screwdriver-executor-k8s": "^10.3.4",
     "screwdriver-executor-k8s-vm": "^1.0.1"

@@ -1,6 +1,7 @@
 'use strict';
 
 const NR = require('node-resque');
+const asCallback = require('ascallback');
 const connectionDetails = {
     pkg: 'ioredis',
     host: process.env.REDIS_HOST,
@@ -8,29 +9,40 @@ const connectionDetails = {
     port: process.env.REDIS_PORT,
     database: 0
 };
+
+/**
+ * Construct an executor and call executor.start with the buildConfig
+ * @method execute
+ * @param  {Object}     config                      config passed in from executor-queue
+ * @param  {Object}     config.executor             config for the executor
+ * @param  {String}     config.executor.name        executor name
+ * @param  {Object}     config.executor.options     options to pass into executor's constructor
+ * @param  {Object}     config.buildConfig          buildConfig needed for executor.start
+ */
+function execute(config) {
+    new Promise((resolve) => {
+        if (config.executor.name === 'queue') {
+            throw new Error('screwdriver-executor-queue is not a valid option');
+        }
+        // eslint-disable-next-line
+        const ExecutorPlugin = require(`screwdriver-executor-${config.executor.name}`);
+        const executor = new ExecutorPlugin(config.executor.options);
+
+        resolve(executor);
+    })
+    .then(executor => executor.start(config.buildConfig));
+}
+
 const jobs = {
     start: {
-        /**
-         * Function to run for 'start'
-         * @method perform
-         * @param  {Object}     config                      config passed in from executor-queue
-         * @param  {Object}     config.executor             config for the executor
-         * @param  {String}     config.executor.name        executor name
-         * @param  {Object}     config.executor.options     options to pass into executor's constructor
-         * @param  {Object}     config.buildConfig          buildConfig needed for executor.start
-         *                                                  This might include apiUri, buildId, container, token
-         */
         perform: (config, callback) =>
-            new Promise((resolve) => {
-                // eslint-disable-next-line
-                const ExecutorPlugin = require(`screwdriver-executor-${config.executor.name}`);
-                const executor = new ExecutorPlugin(config.executor.options);
+            asCallback(execute(config), (err) => {
+                if (err) {
+                    return callback(err);
+                }
 
-                resolve(executor);
+                return callback(null);
             })
-            .then(executor => executor.start(config.buildConfig))
-            .then(() => callback(null))
-            .catch(err => callback(err))
     }
 };
 
