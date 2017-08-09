@@ -2,41 +2,46 @@
 
 const NR = require('node-resque');
 const asCallback = require('ascallback');
+const config = require('config');
+const ecosystem = config.get('ecosystem');
+const executorConfig = config.get('executor');
+const redisConfig = config.get('redis');
+const ExecutorPlugin = require('screwdriver-executor-router');
+const executorPlugins = Object.keys(executorConfig).reduce((aggregator, keyName) => {
+    if (keyName !== 'plugin') {
+        aggregator.push(Object.assign({
+            name: keyName
+        }, executorConfig[keyName]));
+    }
+
+    return aggregator;
+}, []);
+const executor = new ExecutorPlugin({
+    defaultPlugin: executorConfig.plugin,
+    executor: executorPlugins,
+    ecosystem
+});
 const connectionDetails = {
     pkg: 'ioredis',
-    host: process.env.REDIS_HOST,
-    password: process.env.REDIS_PASSWORD,
-    port: process.env.REDIS_PORT,
+    host: redisConfig.REDIS_HOST,
+    password: redisConfig.REDIS_PASSWORD,
+    port: redisConfig.REDIS_PORT,
     database: 0
 };
-
-/**
- * Construct an executor and call executor.start with the buildConfig
- * @method execute
- * @param  {Object}     config                      config passed in from executor-queue
- * @param  {Object}     config.executor             config for the executor
- * @param  {String}     config.executor.name        executor name
- * @param  {Object}     config.executor.options     options to pass into executor's constructor
- * @param  {Object}     config.buildConfig          buildConfig needed for executor.start
- */
-function execute(config) {
-    new Promise((resolve) => {
-        if (config.executor.name === 'queue') {
-            throw new Error('screwdriver-executor-queue is not a valid option');
-        }
-        // eslint-disable-next-line
-        const ExecutorPlugin = require(`screwdriver-executor-${config.executor.name}`);
-        const executor = new ExecutorPlugin(config.executor.options);
-
-        resolve(executor);
-    })
-    .then(executor => executor.start(config.buildConfig));
-}
-
 const jobs = {
     start: {
-        perform: (config, callback) =>
-            asCallback(execute(config), (err) => {
+        /**
+         * Call executor.start with the buildConfig
+         * @method perform
+         * @param {Object}  buildConfig               Configuration
+         * @param {Object}  [buildConfig.annotations] Optional key/value object
+         * @param {String}  buildConfig.apiUri        Screwdriver's API
+         * @param {String}  buildConfig.buildId       Unique ID for a build
+         * @param {String}  buildConfig.container     Container for the build to run in
+         * @param {String}  buildConfig.token         JWT to act on behalf of the build
+         */
+        perform: (buildConfig, callback) =>
+            asCallback(executor.start(buildConfig), (err) => {
                 if (err) {
                     return callback(err);
                 }
@@ -88,3 +93,7 @@ multiWorker.on('multiWorkerAction', (verb, delay) =>
 /* eslint-disable no-console */
 
 multiWorker.start();
+
+module.exports = {
+    jobs
+};

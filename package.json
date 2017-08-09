@@ -35,14 +35,21 @@
     "Tiffany Kyi <tiffanykyi@gmail.com>"
   ],
   "devDependencies": {
+    "chai": "^4.1.1",
     "eslint": "^4.3.0",
-    "eslint-config-screwdriver": "^3.0.0"
+    "eslint-config-screwdriver": "^3.0.0",
+    "jenkins-mocha": "^5.0.0",
+    "mockery": "^2.1.0",
+    "sinon": "^3.1.0"
   },
   "dependencies": {
     "ascallback": "^1.1.1",
+    "config": "^1.26.1",
     "node-resque": "^4.0.7",
+    "screwdriver-executor-docker": "^2.2.2",
     "screwdriver-executor-k8s": "^10.3.4",
-    "screwdriver-executor-k8s-vm": "^1.0.1"
+    "screwdriver-executor-k8s-vm": "^1.0.1",
+    "screwdriver-executor-router": "^1.0.1"
   },
   "release": {
     "debug": false,

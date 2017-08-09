@@ -1,0 +1,46 @@
+# All values in this document are the ENVIRONMENT variable names that can override the defaults
+# from `default.yaml`
+---
+executor:
+    plugin: EXECUTOR_PLUGIN
+    # The NPM module object(s) for the executor plugin(s)
+    k8s:
+      options:
+        kubernetes:
+            # The host or IP of the kubernetes cluster
+            host: K8S_HOST
+            # The jwt token used for authenticating kubernetes requests
+            token: K8S_TOKEN
+            jobsNamespace: K8S_JOBS_NAMESPACE
+        # Launcher container tag to use
+        launchVersion: LAUNCH_VERSION
+        # Prefix to the pod
+        prefix: EXECUTOR_PREFIX
+    k8s-vm:
+      options:
+        # Configuration of Docker
+        kubernetes:
+            # The host or IP of the kubernetes cluster
+            host: K8S_HOST
+            # The jwt token used for authenticating kubernetes requests
+            token: K8S_TOKEN
+            jobsNamespace: K8S_JOBS_NAMESPACE
+            baseImage: K8S_BASE_IMAGE
+        # Launcher container tag to use
+        launchVersion: LAUNCH_VERSION
+        # Prefix to the container
+        prefix: EXECUTOR_PREFIX
+
+ecosystem:
+    # URL for the User Interface
+    api: ECOSYSTEM_API
+    # Externally routable URL for the Artifact Store
+    store: ECOSYSTEM_STORE
+
+redis:
+    # Host of redis cluster
+    host: REDIS_HOST
+    # Password to connect to redis cluster
+    password: REDIS_PASSWORD
+    # Host of redis cluster
+    port: REDIS_PORT

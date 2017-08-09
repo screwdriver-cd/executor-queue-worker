@@ -1,0 +1,39 @@
+---
+executor:
+    # Default executor
+    plugin: k8s-vm
+    k8s:
+      options:
+        kubernetes:
+            # The host or IP of the kubernetes cluster
+            host: kubernetes.default
+            # The jwt token used for authenticating kubernetes requests
+            # Loaded from /var/run/secrets/kubernetes.io/serviceaccount/token by default
+
+        # Container tags to use
+        launchVersion: stable
+    k8s-vm:
+      options:
+        # Configuration of Docker
+        kubernetes:
+            # The host or IP of the kubernetes cluster
+            host: kubernetes.default
+            # The jwt token used for authenticating kubernetes requests
+            # Loaded from /var/run/secrets/kubernetes.io/serviceaccount/token by default
+
+        # Launcher container tag to use
+        launchVersion: stable
+
+ecosystem:
+    # Externally routable URL for the User Interface
+    api: https://api.screwdriver.cd
+    # Externally routable URL for the Artifact Store
+    store: https://store.screwdriver.cd
+
+redis:
+    # Host of redis cluster
+    host: 127.0.0.1
+    # Password to connect to redis cluster
+    # password: null
+    # Host of redis cluster
+    port: 6379
