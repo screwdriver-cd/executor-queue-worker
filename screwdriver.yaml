@@ -9,6 +9,7 @@ jobs:
     main:
         steps:
             - install: npm install
+            - test: npm test
 
     # Publish the package to GitHub and build docker image
     publish:

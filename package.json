@@ -46,6 +46,7 @@
     "ascallback": "^1.1.1",
     "config": "^1.26.1",
     "node-resque": "^4.0.7",
+    "request": "^2.81.0",
     "screwdriver-executor-docker": "^2.2.2",
     "screwdriver-executor-k8s": "^10.3.4",
     "screwdriver-executor-k8s-vm": "^1.0.1",

@@ -9,15 +9,38 @@ const util = require('util');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('index test', () => {
+    const worker = 'abc';
+    const pid = '111';
+    const plugin = {};
+    const result = 'result';
+    const error = 'error';
+    const verb = '+';
+    const delay = '3ms';
+    const workerId = 1;
+    const job = { args: [{ token: 'fake', buildId: 1, apiUri: 'foo.bar' }] };
+    const queue = 'testbuilds';
+    const failure = 'failed';
+    const updateConfig = { job, queue, workerId, failure };
+    const requestOptions = {
+        auth: { bearer: job.args[0].token },
+        json: true,
+        method: 'POST',
+        payload: { status: 'FAILURE' },
+        uri: `${job.args[0].apiUri}/v4/builds/${job.args[0].buildId}`
+    };
+
     let executorMockClass;
     let executorMock;
     let multiWorker;
     let nrMockClass;
     let winstonMock;
+    let requestMock;
     let config;
     let index;
     let jobs;
     let testWorker;
+    let supportFunction;
+    let updateBuildStatusMock;
 
     before(() => {
         mockery.enable({
@@ -30,7 +53,6 @@ describe('index test', () => {
         executorMock = {
             start: sinon.stub()
         };
-
         multiWorker = class { start() {} };
         util.inherits(multiWorker, EventEmitter);
         nrMockClass = {
@@ -41,13 +63,17 @@ describe('index test', () => {
             error: sinon.stub()
         };
         executorMockClass = sinon.stub().returns(executorMock);
+        requestMock = sinon.stub();
+        updateBuildStatusMock = sinon.stub();
 
         mockery.registerMock('screwdriver-executor-router', executorMockClass);
         mockery.registerMock('node-resque', nrMockClass);
         mockery.registerMock('winston', winstonMock);
+        mockery.registerMock('request', requestMock);
 
         // eslint-disable-next-line global-require
         index = require('../index.js');
+        supportFunction = index.supportFunction;
         jobs = index.jobs;
         testWorker = index.multiWorker;
 
@@ -84,23 +110,42 @@ describe('index test', () => {
         executorMock.start.rejects(new Error('fails to start'));
 
         jobs.start.perform(config, (err) => {
-            assert.equal(err.message, 'fails to start');
+            assert.strictEqual(err.message, 'fails to start');
+        });
+    });
+
+    it('log correct message when successfully update build failure status', (done) => {
+        requestMock.yieldsAsync(null, { statusCode: 200 });
+
+        supportFunction.updateBuildStatus(updateConfig, (err) => {
+            assert.calledWith(requestMock, requestOptions);
+            assert.isNull(err);
+            assert.calledWith(winstonMock.error,
+            // eslint-disable-next-line max-len
+                `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`
+            );
+            done();
+        });
+    });
+
+    it('log correct message when fail to update build failure status', (done) => {
+        const requestErr = new Error('failed to update');
+        const response = {};
+
+        requestMock.yieldsAsync(requestErr, response);
+
+        supportFunction.updateBuildStatus(updateConfig, (err) => {
+            assert.calledWith(requestMock, requestOptions);
+            assert.strictEqual(err.message, 'failed to update');
+            assert.calledWith(winstonMock.error,
+                // eslint-disable-next-line max-len
+                `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> ${failure} ${requestErr} ${response}`
+            );
+            done();
         });
     });
 
     it('log the correct message', () => {
-        const workerId = 1;
-        const worker = 'abc';
-        const pid = '111';
-        const job = { args: { token: 'fake' } };
-        const queue = 'testbuilds';
-        const plugin = {};
-        const result = 'result';
-        const failure = 'failed';
-        const error = 'error';
-        const verb = '+';
-        const delay = '3ms';
-
         testWorker.emit('start', workerId);
         assert.calledWith(winstonMock.log, `worker[${workerId}] started`);
 
@@ -125,9 +170,10 @@ describe('index test', () => {
         assert.calledWith(winstonMock.log,
             `worker[${workerId}] ${job} success ${queue} ${JSON.stringify(job)} >> ${result}`);
 
+        // Mock updateBuildStatus to assert params pass in for the function
+        index.supportFunction.updateBuildStatus = updateBuildStatusMock;
         testWorker.emit('failure', workerId, queue, job, failure);
-        assert.calledWith(winstonMock.error,
-            `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> ${failure}`);
+        assert.calledWith(updateBuildStatusMock, updateConfig);
 
         testWorker.emit('error', workerId, queue, job, error);
         assert.calledWith(winstonMock.error,
