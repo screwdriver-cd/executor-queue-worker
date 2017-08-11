@@ -55,7 +55,7 @@ const jobs = {
  * Update build status to FAILURE
  * @method updateBuildStatus
  * @param  {Object}          updateConfig              build config of the job
- * @param  {string}          updateConfig.failure       failure message
+ * @param  {string}          updateConfig.failure      failure message
  * @param  {Object}          updateConfig.job          job info
  * @param  {Object}          updateConfig.queue        queue of the job
  * @param  {integer}         updateConfig.workerId     id of the workerId
