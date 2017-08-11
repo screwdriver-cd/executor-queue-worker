@@ -3,6 +3,7 @@
 const NR = require('node-resque');
 const asCallback = require('ascallback');
 const config = require('config');
+const winston = require('winston');
 const ecosystem = config.get('ecosystem');
 const executorConfig = config.get('executor');
 const redisConfig = config.get('redis');
@@ -62,38 +63,36 @@ const multiWorker = new NR.multiWorker({
     toDisconnectProcessors: true
 }, jobs);
 
-/* eslint-disable no-console */
 multiWorker.on('start', workerId =>
-    console.log(`worker[${workerId}] started`));
+    winston.log(`worker[${workerId}] started`));
 multiWorker.on('end', workerId =>
-    console.log(`worker[${workerId}] ended`));
+    winston.log(`worker[${workerId}] ended`));
 multiWorker.on('cleaning_worker', (workerId, worker, pid) =>
-    console.log(`cleaning old worker ${worker} pid ${pid}`));
+    winston.log(`cleaning old worker ${worker} pid ${pid}`));
 multiWorker.on('poll', (workerId, queue) =>
-    console.log(`worker[${workerId}] polling ${queue}`));
+    winston.log(`worker[${workerId}] polling ${queue}`));
 multiWorker.on('job', (workerId, queue, job) =>
-    console.log(`worker[${workerId}] working job ${queue} ${JSON.stringify(job)}}`));
+    winston.log(`worker[${workerId}] working job ${queue} ${JSON.stringify(job)}}`));
 multiWorker.on('reEnqueue', (workerId, queue, job, plugin) =>
-    console.log(`worker[${workerId}] reEnqueue job (${plugin}) ${queue} ${JSON.stringify(job)}`));
+    winston.log(`worker[${workerId}] reEnqueue job (${plugin}) ${queue} ${JSON.stringify(job)}`));
 multiWorker.on('success', (workerId, queue, job, result) =>
-    console.log(`worker[${workerId}] ${job} success ${queue} ${JSON.stringify(job)} >> ${result}`));
-multiWorker.on('failure', (workerId, queue, job, failure) =>
-    console.error(`worker[${workerId}] ${job} failure ${queue}
-        ${JSON.stringify(job)} >> ${failure}`));
+    winston.log(`worker[${workerId}] ${job} success ${queue} ${JSON.stringify(job)} >> ${result}`));
+multiWorker.on('failure', (workerId, queue, job, failure) => winston.error(
+    `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> ${failure}`));
 multiWorker.on('error', (workerId, queue, job, error) =>
-    console.error(`worker[${workerId}] error ${queue} ${JSON.stringify(job)} >> ${error}`));
+    winston.error(`worker[${workerId}] error ${queue} ${JSON.stringify(job)} >> ${error}`));
 multiWorker.on('pause', workerId =>
-    console.log(`worker[${workerId}] paused`));
+    winston.log(`worker[${workerId}] paused`));
 
 // multiWorker emitters
 multiWorker.on('internalError', error =>
-    console.error(error));
+    winston.error(error));
 multiWorker.on('multiWorkerAction', (verb, delay) =>
-    console.log(`*** checked for worker status: ${verb} (event loop delay: ${delay}ms)`));
-/* eslint-disable no-console */
+    winston.log(`*** checked for worker status: ${verb} (event loop delay: ${delay}ms)`));
 
 multiWorker.start();
 
 module.exports = {
-    jobs
+    jobs,
+    multiWorker
 };
