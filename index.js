@@ -68,7 +68,7 @@ function updateBuildStatus(updateConfig, callback) {
 
     return request({
         json: true,
-        method: 'POST',
+        method: 'PUT',
         uri: `${apiUri}/v4/builds/${buildId}`,
         payload: {
             status: 'FAILURE'

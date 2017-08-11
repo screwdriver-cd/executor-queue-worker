@@ -24,7 +24,7 @@ describe('index test', () => {
     const requestOptions = {
         auth: { bearer: job.args[0].token },
         json: true,
-        method: 'POST',
+        method: 'PUT',
         payload: { status: 'FAILURE' },
         uri: `${job.args[0].apiUri}/v4/builds/${job.args[0].buildId}`
     };
