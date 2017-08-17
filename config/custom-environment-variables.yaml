@@ -45,4 +45,4 @@ redis:
     # Host of redis cluster
     port: REDIS_PORT
     # Prefix for the queue name
-    prefix: EXECUTOR_PREFIX
+    prefix: REDIS_QUEUE_PREFIX
