@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "config": "^1.26.1",
+    "ioredis": "^3.1.4",
     "node-resque": "^4.0.7",
     "request": "^2.81.0",
     "screwdriver-executor-docker": "^2.2.2",

@@ -7,9 +7,11 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Jobs Unit Test', () => {
+    let jobs;
     let mockExecutor;
     let mockExecutorRouter;
-    let jobs;
+    let mockRedis;
+    let mockRedisObj;
 
     before(() => {
         mockery.enable({
@@ -24,9 +26,16 @@ describe('Jobs Unit Test', () => {
             stop: sinon.stub()
         };
 
-        mockExecutorRouter = function () { return mockExecutor; };
+        mockRedisObj = {
+            hget: sinon.stub(),
+            hdel: sinon.stub()
+        };
 
+        mockExecutorRouter = function () { return mockExecutor; };
         mockery.registerMock('screwdriver-executor-router', mockExecutorRouter);
+
+        mockRedis = sinon.stub().returns(mockRedisObj);
+        mockery.registerMock('ioredis', mockRedis);
 
         // eslint-disable-next-line global-require
         jobs = require('../lib/jobs');
@@ -41,26 +50,83 @@ describe('Jobs Unit Test', () => {
         mockery.disable();
     });
 
+    describe('redis constructor', () => {
+        it('creates a redis connection given a valid config', () => {
+            const redisConfig = {
+                database: 0,
+                pkg: 'ioredis',
+                host: '127.0.0.1',
+                options: {
+                    password: undefined
+                },
+                port: 6379
+            };
+
+            assert.calledWith(mockRedis, redisConfig);
+        });
+    });
+
     describe('start', () => {
         it('starts a job', (done) => {
-            const expectedConfig = { buildConfig: 'buildConfig' };
+            const expectedConfig = {
+                annotations: {
+                    'beta.screwdriver.cd/executor': 'screwdriver-executor-k8s'
+                },
+                buildId: 8609,
+                container: 'node:4',
+                apiUri: 'http://api.com',
+                token: 'asdf'
+            };
 
             mockExecutor.start.resolves(null);
+            mockRedisObj.hget.resolves(expectedConfig);
+            mockRedisObj.hdel.resolves(1);
 
-            jobs.start(expectedConfig, (err, result) => {
+            jobs.start({ buildId: expectedConfig.buildId }, (err, result) => {
                 assert.isNull(err);
                 assert.isNull(result);
 
                 assert.calledWith(mockExecutor.start, expectedConfig);
+
+                assert.calledWith(mockRedisObj.hget, 'buildConfigs', expectedConfig.buildId);
+                assert.calledWith(mockRedisObj.hdel, 'buildConfigs', expectedConfig.buildId);
 
                 done();
             });
         });
 
         it('returns an error from executor', (done) => {
+            mockRedisObj.hget.resolves({});
+            mockRedisObj.hdel.resolves(1);
+
             const expectedError = new Error('executor.start Error');
 
             mockExecutor.start.rejects(expectedError);
+
+            jobs.start({}, (err) => {
+                assert.deepEqual(err, expectedError);
+
+                done();
+            });
+        });
+
+        it('returns an error when redis fails to get a config', (done) => {
+            const expectedError = new Error('hget error');
+
+            mockRedisObj.hget.rejects(expectedError);
+
+            jobs.start({}, (err) => {
+                assert.deepEqual(err, expectedError);
+
+                done();
+            });
+        });
+
+        it('returns an error when redis fails to remove a config', (done) => {
+            const expectedError = new Error('hdel error');
+
+            mockRedisObj.hget.resolves({});
+            mockRedisObj.hdel.rejects(expectedError);
 
             jobs.start({}, (err) => {
                 assert.deepEqual(err, expectedError);
