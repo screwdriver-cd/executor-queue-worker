@@ -141,11 +141,13 @@ describe('Jobs Unit Test', () => {
             const expectedConfig = { buildConfig: 'buildConfig' };
 
             mockExecutor.stop.resolves(null);
+            mockRedisObj.hdel.resolves(1);
 
             jobs.stop(expectedConfig, (err, result) => {
                 assert.isNull(err);
                 assert.isNull(result);
 
+                assert.calledWith(mockRedisObj.hdel, 'buildConfigs', expectedConfig.buildId);
                 assert.calledWith(mockExecutor.stop, expectedConfig);
 
                 done();
@@ -155,7 +157,20 @@ describe('Jobs Unit Test', () => {
         it('returns an error from stopping executor', (done) => {
             const expectedError = new Error('executor.stop Error');
 
+            mockRedisObj.hdel.resolves(1);
             mockExecutor.stop.rejects(expectedError);
+
+            jobs.stop({}, (err) => {
+                assert.deepEqual(err, expectedError);
+
+                done();
+            });
+        });
+
+        it('returns an error when redis fails to remove a config', (done) => {
+            const expectedError = new Error('hdel error');
+
+            mockRedisObj.hdel.rejects(expectedError);
 
             jobs.stop({}, (err) => {
                 assert.deepEqual(err, expectedError);
