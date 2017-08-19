@@ -70,7 +70,7 @@ describe('Jobs Unit Test', () => {
         it('starts a job', (done) => {
             const expectedConfig = {
                 annotations: {
-                    'beta.screwdriver.cd/executor': 'screwdriver-executor-k8s'
+                    'beta.screwdriver.cd/executor': 'k8s'
                 },
                 buildId: 8609,
                 container: 'node:4',

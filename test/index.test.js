@@ -35,6 +35,7 @@ describe('Index Test', () => {
     let spyMultiWorker;
     let winstonMock;
     let requestMock;
+    let redisConfigMock;
     let index;
     let testWorker;
     let supportFunction;
@@ -69,11 +70,16 @@ describe('Index Test', () => {
         updateBuildStatusMock = sinon.stub();
         processExitMock = sinon.stub();
         process.exit = processExitMock;
+        redisConfigMock = {
+            connectionDetails: 'mockRedisConfig',
+            queuePrefix: 'mockQueuePrefix_'
+        };
 
         mockery.registerMock('./lib/jobs', mockJobs);
         mockery.registerMock('node-resque', nrMockClass);
         mockery.registerMock('winston', winstonMock);
         mockery.registerMock('request', requestMock);
+        mockery.registerMock('./config/redis', redisConfigMock);
 
         // eslint-disable-next-line global-require
         index = require('../index.js');
@@ -193,16 +199,8 @@ describe('Index Test', () => {
     describe('multiWorker', () => {
         it('is constructed correctly', () => {
             const expectedConfig = {
-                connection: sinon.match({
-                    pkg: 'ioredis',
-                    host: '127.0.0.1',
-                    port: 6379,
-                    database: 0,
-                    options: {
-                        password: undefined
-                    }
-                }),
-                queues: ['builds'],
+                connection: 'mockRedisConfig',
+                queues: ['mockQueuePrefix_builds'],
                 minTaskProcessors: 1,
                 maxTaskProcessors: 10,
                 checkTimeout: 1000,
