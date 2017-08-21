@@ -52,17 +52,13 @@ describe('Jobs Unit Test', () => {
 
     describe('redis constructor', () => {
         it('creates a redis connection given a valid config', () => {
-            const redisConfig = {
-                database: 0,
-                pkg: 'ioredis',
-                host: '127.0.0.1',
-                options: {
-                    password: undefined
-                },
-                port: 6379
+            const expectedPort = 6379;
+            const expectedHost = '127.0.0.1';
+            const expectedOptions = {
+                password: undefined
             };
 
-            assert.calledWith(mockRedis, redisConfig);
+            assert.calledWith(mockRedis, expectedPort, expectedHost, expectedOptions);
         });
     });
 
