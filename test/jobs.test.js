@@ -65,9 +65,9 @@ describe('Jobs Unit Test', () => {
     describe('start', () => {
         it('constructs start job correctly', () =>
             assert.deepEqual(jobs.start, {
-                plugins: ['Retry'],
+                plugins: ['retry'],
                 pluginOptions: {
-                    Retry: {
+                    retry: {
                         retryLimit: 3,
                         retryDelay: 1000
                     }
@@ -140,9 +140,9 @@ describe('Jobs Unit Test', () => {
     describe('stop', () => {
         it('constructs stop job correctly', () =>
             assert.deepEqual(jobs.stop, {
-                plugins: ['Retry'],
+                plugins: ['retry'],
                 pluginOptions: {
-                    Retry: {
+                    retry: {
                         retryLimit: 3,
                         retryDelay: 1000
                     }
