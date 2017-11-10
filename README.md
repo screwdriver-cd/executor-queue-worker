@@ -3,7 +3,7 @@
 
 > Create executor queue worker(s)
 
-A Resque Worker implementation that consumes jobs and other workloads in a Resque queue.
+A Resque Worker implementation that consumes jobs in a Resque queue.
 
 ## Usage
 
