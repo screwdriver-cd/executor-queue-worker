@@ -69,7 +69,7 @@ describe('Jobs Unit Test', () => {
                 pluginOptions: {
                     retry: {
                         retryLimit: 3,
-                        retryDelay: 1000
+                        retryDelay: 5
                     }
                 },
                 perform: jobs.start.perform
@@ -144,7 +144,7 @@ describe('Jobs Unit Test', () => {
                 pluginOptions: {
                     retry: {
                         retryLimit: 3,
-                        retryDelay: 1000
+                        retryDelay: 5
                     }
                 },
                 perform: jobs.stop.perform
