@@ -45,22 +45,28 @@ function updateBuildStatus(updateConfig, callback) {
 }
 
 /**
- * Shutdown workers and then exit the process
- * @method shutDownWorker
- * @param  {Object}       worker    worker to be ended
+ * Shutdown both worker and scheduler and then exit the process
+ * @method shutDownAll
+ * @param  {Object}       worker        worker to be ended
+ * @param  {Object}       scheduler     scheduler to be ended
  */
-function shutDownWorker(worker) {
-    worker.end((err) => {
-        if (err) {
-            winston.error(`failed to end the worker: ${err}`);
-            process.exit(128);
+function shutDownAll(worker, scheduler) {
+    worker.end((error) => {
+        if (error) {
+            winston.error(`failed to end the worker: ${error}`);
         }
 
-        process.exit(0);
+        scheduler.end((err) => {
+            if (err) {
+                winston.error(`failed to end the scheduler: ${err}`);
+                process.exit(128);
+            }
+            process.exit(0);
+        });
     });
 }
 
-const supportFunction = { updateBuildStatus, shutDownWorker };
+const supportFunction = { updateBuildStatus, shutDownAll };
 
 /* eslint-disable new-cap, max-len */
 const multiWorker = new NR.multiWorker({
@@ -72,6 +78,8 @@ const multiWorker = new NR.multiWorker({
     maxEventLoopDelay: 10,
     toDisconnectProcessors: true
 }, jobs);
+
+const scheduler = new NR.scheduler({ connection: connectionDetails });
 
 multiWorker.on('start', workerId =>
     winston.info(`worker[${workerId}] started`));
@@ -100,13 +108,32 @@ multiWorker.on('internalError', error =>
 multiWorker.on('multiWorkerAction', (verb, delay) =>
     winston.info(`*** checked for worker status: ${verb} (event loop delay: ${delay}ms)`));
 
+scheduler.on('start', () =>
+    winston.info('scheduler started'));
+scheduler.on('end', () =>
+    winston.info('scheduler ended'));
+scheduler.on('poll', () =>
+    winston.info('scheduler polling'));
+scheduler.on('master', state =>
+    winston.info(`scheduler became master ${state}`));
+scheduler.on('error', error =>
+    winston.info(`scheduler error >> ${error}`));
+scheduler.on('working_timestamp', timestamp =>
+    winston.info(`scheduler working timestamp ${timestamp}`));
+scheduler.on('transferred_job', (timestamp, job) =>
+    winston.info(`scheduler enqueuing job timestamp  >>  ${JSON.stringify(job)}`));
+
 multiWorker.start();
+scheduler.connect(() => {
+    scheduler.start();
+});
 
 // Shut down workers before exit the process
-process.on('SIGTERM', () => supportFunction.shutDownWorker(multiWorker));
+process.on('SIGTERM', () => supportFunction.shutDownAll(multiWorker, scheduler));
 
 module.exports = {
     jobs,
     multiWorker,
+    scheduler,
     supportFunction
 };

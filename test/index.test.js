@@ -31,13 +31,16 @@ describe('Index Test', () => {
 
     let mockJobs;
     let multiWorker;
+    let scheduler;
     let nrMockClass;
     let spyMultiWorker;
+    let spyScheduler;
     let winstonMock;
     let requestMock;
     let redisConfigMock;
     let index;
     let testWorker;
+    let testScheduler;
     let supportFunction;
     let updateBuildStatusMock;
     let processExitMock;
@@ -57,11 +60,19 @@ describe('Index Test', () => {
             this.start = () => {};
             this.end = sinon.stub();
         };
+        scheduler = function () {
+            this.start = () => {};
+            this.connect = () => {};
+            this.end = sinon.stub();
+        };
         util.inherits(multiWorker, EventEmitter);
+        util.inherits(scheduler, EventEmitter);
         nrMockClass = {
-            multiWorker
+            multiWorker,
+            scheduler
         };
         spyMultiWorker = sinon.spy(nrMockClass, 'multiWorker');
+        spyScheduler = sinon.spy(nrMockClass, 'scheduler');
         winstonMock = {
             info: sinon.stub(),
             error: sinon.stub()
@@ -85,6 +96,7 @@ describe('Index Test', () => {
         index = require('../index.js');
         supportFunction = index.supportFunction;
         testWorker = index.multiWorker;
+        testScheduler = index.scheduler;
     });
 
     afterEach(() => {
@@ -129,28 +141,43 @@ describe('Index Test', () => {
             });
         });
 
-        it('logs error and exit with non-zero code when it fails to end worker', (done) => {
+        it('logs error and then end scheduler when it fails to end worker', (done) => {
             const expectedErr = new Error('failed');
 
             testWorker.end.callsArgWith(0, expectedErr);
+            testScheduler.end.callsArgWith(0, null);
 
-            supportFunction.shutDownWorker(testWorker);
+            supportFunction.shutDownAll(testWorker, testScheduler);
             assert.calledWith(winstonMock.error, `failed to end the worker: ${expectedErr}`);
+            assert.calledOnce(testScheduler.end);
+            assert.calledWith(processExitMock, 0);
+            done();
+        });
+
+        it('logs error and exit with 128 when it fails to end scheduler', (done) => {
+            const expectedErr = new Error('failed');
+
+            testWorker.end.callsArgWith(0, null);
+            testScheduler.end.callsArgWith(0, expectedErr);
+
+            supportFunction.shutDownAll(testWorker, testScheduler);
+            assert.calledWith(winstonMock.error, `failed to end the scheduler: ${expectedErr}`);
             assert.calledWith(processExitMock, 128);
             done();
         });
 
-        it('exit with 0 when it successfully ends worker', (done) => {
+        it('exit with 0 when it successfully ends both scheduler and worker', (done) => {
             testWorker.end.callsArgWith(0, null);
+            testScheduler.end.callsArgWith(0, null);
 
-            supportFunction.shutDownWorker(testWorker);
+            supportFunction.shutDownAll(testWorker, testScheduler);
             assert.calledWith(processExitMock, 0);
             done();
         });
     });
 
     describe('event handler', () => {
-        it('logs the correct message', () => {
+        it('logs the correct message for worker', () => {
             testWorker.emit('start', workerId);
             assert.calledWith(winstonMock.info, `worker[${workerId}] started`);
 
@@ -194,6 +221,36 @@ describe('Index Test', () => {
             assert.calledWith(winstonMock.info,
                 `*** checked for worker status: ${verb} (event loop delay: ${delay}ms)`);
         });
+
+        it('logs the correct message for scheduler', () => {
+            const state = 'mock state';
+            const timestamp = 'mock timestamp';
+
+            testScheduler.emit('start');
+            assert.calledWith(winstonMock.info, 'scheduler started');
+
+            testScheduler.emit('end');
+            assert.calledWith(winstonMock.info, 'scheduler ended');
+
+            testScheduler.emit('poll');
+            assert.calledWith(winstonMock.info, 'scheduler polling');
+
+            testScheduler.emit('master', state);
+            assert.calledWith(winstonMock.info,
+                `scheduler became master ${state}`);
+
+            testScheduler.emit('error', error);
+            assert.calledWith(winstonMock.info,
+                `scheduler error >> ${error}`);
+
+            testScheduler.emit('working_timestamp', timestamp);
+            assert.calledWith(winstonMock.info,
+                `scheduler working timestamp ${timestamp}`);
+
+            testScheduler.emit('transferred_job', timestamp, job);
+            assert.calledWith(winstonMock.info,
+                `scheduler enqueuing job timestamp  >>  ${JSON.stringify(job)}`);
+        });
     });
 
     describe('multiWorker', () => {
@@ -213,16 +270,26 @@ describe('Index Test', () => {
             }));
         });
 
-        it('shuts down worker when received SIGTERM signal', (done) => {
-            const shutDownWorkerMock = sinon.stub();
+        it('shuts down worker and scheduler when received SIGTERM signal', (done) => {
+            const shutDownAllMock = sinon.stub();
 
-            index.supportFunction.shutDownWorker = shutDownWorkerMock;
+            index.supportFunction.shutDownAll = shutDownAllMock;
 
             process.once('SIGTERM', () => {
-                assert.calledOnce(shutDownWorkerMock);
+                assert.calledOnce(shutDownAllMock);
                 done();
             });
             process.kill(process.pid, 'SIGTERM');
+        });
+    });
+
+    describe('scheduler', () => {
+        it('is constructed correctly', () => {
+            const expectedConfig = {
+                connection: 'mockRedisConfig'
+            };
+
+            assert.calledWith(spyScheduler, sinon.match(expectedConfig));
         });
     });
 });
