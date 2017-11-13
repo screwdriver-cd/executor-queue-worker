@@ -89,16 +89,13 @@ describe('Jobs Unit Test', () => {
 
             mockExecutor.start.resolves(null);
             mockRedisObj.hget.resolves(expectedConfig);
-            mockRedisObj.hdel.resolves(1);
 
             return jobs.start.perform({ buildId: expectedConfig.buildId }, (err, result) => {
                 assert.isNull(err);
                 assert.isNull(result);
 
                 assert.calledWith(mockExecutor.start, JSON.parse(expectedConfig));
-
                 assert.calledWith(mockRedisObj.hget, 'buildConfigs', expectedConfig.buildId);
-                assert.calledWith(mockRedisObj.hdel, 'buildConfigs', expectedConfig.buildId);
             });
         });
 
@@ -119,17 +116,6 @@ describe('Jobs Unit Test', () => {
             const expectedError = new Error('hget error');
 
             mockRedisObj.hget.rejects(expectedError);
-
-            return jobs.start.perform({}, (err) => {
-                assert.deepEqual(err, expectedError);
-            });
-        });
-
-        it('returns an error when redis fails to remove a config', () => {
-            const expectedError = new Error('hdel error');
-
-            mockRedisObj.hget.resolves('{}');
-            mockRedisObj.hdel.rejects(expectedError);
 
             return jobs.start.perform({}, (err) => {
                 assert.deepEqual(err, expectedError);

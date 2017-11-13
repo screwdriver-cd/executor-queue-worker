@@ -17,16 +17,16 @@ describe('Index Test', () => {
     const verb = '+';
     const delay = '3ms';
     const workerId = 1;
-    const job = { args: [{ token: 'fake', buildId: 1, apiUri: 'foo.bar' }] };
+    const job = { args: [{ buildId: 1 }] };
     const queue = 'testbuilds';
     const failure = 'failed';
     const updateConfig = { job, queue, workerId, failure };
     const requestOptions = {
-        auth: { bearer: job.args[0].token },
+        auth: { bearer: 'fake' },
         json: true,
         method: 'PUT',
         payload: { status: 'FAILURE' },
-        uri: `${job.args[0].apiUri}/v4/builds/${job.args[0].buildId}`
+        uri: `foo.bar/v4/builds/${job.args[0].buildId}`
     };
 
     let mockJobs;
@@ -44,6 +44,8 @@ describe('Index Test', () => {
     let supportFunction;
     let updateBuildStatusMock;
     let processExitMock;
+    let mockRedis;
+    let mockRedisObj;
 
     before(() => {
         mockery.enable({
@@ -85,7 +87,12 @@ describe('Index Test', () => {
             connectionDetails: 'mockRedisConfig',
             queuePrefix: 'mockQueuePrefix_'
         };
+        mockRedisObj = {
+            hget: sinon.stub().resolves('{"apiUri": "foo.bar", "token": "fake"}')
+        };
+        mockRedis = sinon.stub().returns(mockRedisObj);
 
+        mockery.registerMock('ioredis', mockRedis);
         mockery.registerMock('./lib/jobs', mockJobs);
         mockery.registerMock('node-resque', nrMockClass);
         mockery.registerMock('winston', winstonMock);
@@ -114,6 +121,8 @@ describe('Index Test', () => {
             requestMock.yieldsAsync(null, { statusCode: 200 });
 
             supportFunction.updateBuildStatus(updateConfig, (err) => {
+                assert.calledWith(mockRedisObj.hget,
+                    'mockQueuePrefix_buildConfigs', job.args[0].buildId);
                 assert.calledWith(requestMock, requestOptions);
                 assert.isNull(err);
                 assert.calledWith(winstonMock.error,
