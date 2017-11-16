@@ -25,7 +25,10 @@ describe('Index Test', () => {
         auth: { bearer: 'fake' },
         json: true,
         method: 'PUT',
-        payload: { status: 'FAILURE' },
+        payload: {
+            status: 'FAILURE',
+            statusMessage: 'Build failed to start due to infrastructure error'
+        },
         uri: `foo.bar/v4/builds/${job.args[0].buildId}`
     };
 

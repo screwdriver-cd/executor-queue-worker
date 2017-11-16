@@ -30,7 +30,8 @@ function updateBuildStatus(updateConfig, callback) {
             method: 'PUT',
             uri: `${fullBuildConfig.apiUri}/v4/builds/${buildId}`,
             payload: {
-                status: 'FAILURE'
+                status: 'FAILURE',
+                statusMessage: 'Build failed to start due to infrastructure error'
             },
             auth: {
                 bearer: fullBuildConfig.token
