@@ -93,6 +93,8 @@ ecosystem:
     api: ECOSYSTEM_API
     # Externally routable URL for the Artifact Store
     store: ECOSYSTEM_STORE
+    # Pushgateway URL for Prometheus
+    pushgatewayUrl: ECOSYSTEM_PUSHGATEWAY_URL
 
 redis:
     # Host of redis cluster
