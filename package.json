@@ -49,8 +49,8 @@
     "request": "^2.81.0",
     "screwdriver-executor-docker": "^2.2.2",
     "screwdriver-executor-jenkins": "^2.0.0",
-    "screwdriver-executor-k8s": "^10.7.2",
-    "screwdriver-executor-k8s-vm": "^2.2.1",
+    "screwdriver-executor-k8s": "^10.9.1",
+    "screwdriver-executor-k8s-vm": "^2.3.1",
     "screwdriver-executor-router": "^1.0.1",
     "winston": "^2.3.1"
   },
