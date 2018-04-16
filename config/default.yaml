@@ -16,6 +16,9 @@ executor:
                     # Memory in GB
                     low: 2
                     high: 12
+            # k8s node selectors for approprate pod scheduling
+            nodeSelectors: {}
+            preferredNodeSelectors: {}
         # Container tags to use
         launchVersion: stable
     k8s-vm:
@@ -36,6 +39,7 @@ executor:
                     high: 12
             # k8s node selectors for approprate pod scheduling
             nodeSelectors: {}
+            preferredNodeSelectors: {}
         # Launcher container tag to use
         launchVersion: stable
 #     jenkins:
