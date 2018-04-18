@@ -1,5 +1,5 @@
 shared:
-    image: node:6
+    image: node:8
 
 jobs:
     main:
@@ -16,7 +16,7 @@ jobs:
     # Publish the package to GitHub and build docker image
     publish:
         requires: [main]
-        template: screwdriver-cd/semantic-release 
+        template: screwdriver-cd/semantic-release
         steps:
             - postpublish: git clone https://gist.github.com/3d2388b2a7ba658cdcdaffa8cd874e50.git ci && ./ci/docker.sh
         environment:
