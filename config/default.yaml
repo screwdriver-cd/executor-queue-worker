@@ -16,6 +16,10 @@ executor:
                     # Memory in GB
                     low: 2
                     high: 12
+            # Default build timeout for all builds in this cluster
+            buildTimeout: 90
+            # Default max build timeout
+            maxBuildTimeout: 120
             # k8s node selectors for approprate pod scheduling
             nodeSelectors: {}
             preferredNodeSelectors: {}
@@ -37,6 +41,10 @@ executor:
                     # Memory in GB
                     low: 2
                     high: 12
+            # Default build timeout for all builds in this cluster
+            buildTimeout: 90
+            # Default max build timeout
+            maxBuildTimeout: 120
             # k8s node selectors for approprate pod scheduling
             nodeSelectors: {}
             preferredNodeSelectors: {}
@@ -68,4 +76,3 @@ redis:
     # prefix: 'beta-'
     # Flag to enable client for TLS-based communication
     tls: false
-
