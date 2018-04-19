@@ -8,7 +8,8 @@ jobs:
         # ~sd@19:publish screwdriver-executor-jenkins https://cd.screwdriver.cd/pipelines/19
         # ~sd@28:publish screwdriver-executor-k8s https://cd.screwdriver.cd/pipelines/28
         # ~sd@202:publish screwdriver-executor-router https://cd.screwdriver.cd/pipelines/202
-        requires: [~pr, ~commit, ~sd@235:publish, ~sd@13:publish, ~sd@28:publish, ~sd@202:publish, ~sd@19:publish]
+        # requires: [~pr, ~commit, ~sd@235:publish, ~sd@13:publish, ~sd@28:publish, ~sd@202:publish, ~sd@19:publish]
+        requires: [~pr, ~commit]
         steps:
             - install: npm install
             - test: npm test
