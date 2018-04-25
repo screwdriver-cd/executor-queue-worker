@@ -10,10 +10,12 @@ executor:
             resources:
                 cpu:
                     # Number of cpu cores
+                    micro: "0.5"
                     low: 2
                     high: 6
                 memory:
                     # Memory in GB
+                    micro: 1
                     low: 2
                     high: 12
             # Default build timeout for all builds in this cluster
@@ -35,10 +37,12 @@ executor:
             resources:
                 cpu:
                     # Number of cpu cores
+                    micro: 1
                     low: 2
                     high: 6
                 memory:
                     # Memory in GB
+                    micro: 1
                     low: 2
                     high: 12
             # Default build timeout for all builds in this cluster
