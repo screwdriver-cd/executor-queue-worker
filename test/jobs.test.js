@@ -23,6 +23,7 @@ describe('Jobs Unit Test', () => {
     beforeEach(() => {
         mockExecutor = {
             start: sinon.stub(),
+            startPeriodic: sinon.stub(),
             stop: sinon.stub()
         };
 
@@ -119,6 +120,61 @@ describe('Jobs Unit Test', () => {
             mockRedisObj.hget.rejects(expectedError);
 
             return jobs.start.perform({}, (err) => {
+                assert.deepEqual(err, expectedError);
+            });
+        });
+    });
+
+    describe('startDelayed', () => {
+        it('constructs startDelayed job correctly', () =>
+            assert.deepEqual(jobs.startDelayed, {
+                plugins: ['retry'],
+                pluginOptions: {
+                    retry: {
+                        retryLimit: 3,
+                        retryDelay: 5
+                    }
+                },
+                perform: jobs.startDelayed.perform
+            })
+        );
+
+        it('starts a delayed job', () => {
+            const expectedConfig = JSON.stringify({
+                jobId: 1
+            });
+
+            mockExecutor.startPeriodic.resolves(null);
+            mockRedisObj.hget.resolves(expectedConfig);
+
+            return jobs.startDelayed.perform({ jobId: expectedConfig.jobId }, (err, result) => {
+                assert.isNull(err);
+                assert.isNull(result);
+
+                assert.calledWith(mockExecutor.startPeriodic, JSON.parse(expectedConfig));
+                assert.calledWith(mockRedisObj.hget, 'periodicBuilds', expectedConfig.jobId);
+            });
+        });
+
+        it('returns an error from executor', () => {
+            mockRedisObj.hget.resolves('{}');
+            mockRedisObj.hdel.resolves(1);
+
+            const expectedError = new Error('executor.startPeriodic Error');
+
+            mockExecutor.startPeriodic.rejects(expectedError);
+
+            return jobs.startDelayed.perform({}, (err) => {
+                assert.deepEqual(err, expectedError);
+            });
+        });
+
+        it('returns an error when redis fails to get a config', () => {
+            const expectedError = new Error('hget error');
+
+            mockRedisObj.hget.rejects(expectedError);
+
+            return jobs.startDelayed.perform({}, (err) => {
                 assert.deepEqual(err, expectedError);
             });
         });
