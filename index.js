@@ -1,6 +1,6 @@
 'use strict';
 
-const NR = require('node-resque');
+const NodeResque = require('node-resque');
 const jobs = require('./lib/jobs');
 const Redis = require('ioredis');
 const request = require('request');
@@ -37,7 +37,6 @@ function updateBuildStatus(updateConfig, callback) {
                 bearer: fullBuildConfig.token
             }
         }, (err, response) => {
-            console.log('here');
             if (!err && response.statusCode === 200) {
                 // eslint-disable-next-line max-len
                 winston.error(`worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`);
@@ -75,7 +74,7 @@ function shutDownAll(worker, scheduler) {
 const supportFunction = { updateBuildStatus, shutDownAll };
 
 /* eslint-disable new-cap, max-len */
-const multiWorker = new NR.MultiWorker({
+const multiWorker = new NodeResque.MultiWorker({
     connection: connectionDetails,
     queues: [`${queuePrefix}builds`],
     minTaskProcessors: 1,
@@ -85,7 +84,7 @@ const multiWorker = new NR.MultiWorker({
     toDisconnectProcessors: true
 }, jobs);
 
-const scheduler = new NR.Scheduler({ connection: connectionDetails });
+const scheduler = new NodeResque.Scheduler({ connection: connectionDetails });
 
 multiWorker.on('start', workerId =>
     winston.info(`worker[${workerId}] started`));
@@ -131,8 +130,17 @@ scheduler.on('transferred_job', (timestamp, job) =>
 
 multiWorker.start();
 
-scheduler.connect();
-scheduler.start();
+/**
+ * Start scheduler
+ * @method boot
+ * @return {Promise}
+ */
+async function boot() {
+    await scheduler.connect();
+    scheduler.start();
+}
+
+boot();
 
 // Shut down workers before exit the process
 process.on('SIGTERM', () => supportFunction.shutDownAll(multiWorker, scheduler));
