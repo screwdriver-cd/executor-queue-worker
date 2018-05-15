@@ -37,6 +37,7 @@ function updateBuildStatus(updateConfig, callback) {
                 bearer: fullBuildConfig.token
             }
         }, (err, response) => {
+            console.log('here');
             if (!err && response.statusCode === 200) {
                 // eslint-disable-next-line max-len
                 winston.error(`worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`);
@@ -74,7 +75,7 @@ function shutDownAll(worker, scheduler) {
 const supportFunction = { updateBuildStatus, shutDownAll };
 
 /* eslint-disable new-cap, max-len */
-const multiWorker = new NR.multiWorker({
+const multiWorker = new NR.MultiWorker({
     connection: connectionDetails,
     queues: [`${queuePrefix}builds`],
     minTaskProcessors: 1,
@@ -84,7 +85,7 @@ const multiWorker = new NR.multiWorker({
     toDisconnectProcessors: true
 }, jobs);
 
-const scheduler = new NR.scheduler({ connection: connectionDetails });
+const scheduler = new NR.Scheduler({ connection: connectionDetails });
 
 multiWorker.on('start', workerId =>
     winston.info(`worker[${workerId}] started`));
@@ -129,9 +130,9 @@ scheduler.on('transferred_job', (timestamp, job) =>
     winston.info(`scheduler enqueuing job timestamp  >>  ${JSON.stringify(job)}`));
 
 multiWorker.start();
-scheduler.connect(() => {
-    scheduler.start();
-});
+
+scheduler.connect();
+scheduler.start();
 
 // Shut down workers before exit the process
 process.on('SIGTERM', () => supportFunction.shutDownAll(multiWorker, scheduler));

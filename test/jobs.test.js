@@ -12,6 +12,7 @@ describe('Jobs Unit Test', () => {
     let mockExecutorRouter;
     let mockRedis;
     let mockRedisObj;
+    let mockBlockedBy;
 
     before(() => {
         mockery.enable({
@@ -36,6 +37,9 @@ describe('Jobs Unit Test', () => {
 
         mockRedis = sinon.stub().returns(mockRedisObj);
         mockery.registerMock('ioredis', mockRedis);
+
+        mockBlockedBy = sinon.stub().returns();
+        mockery.registerMock('./BlockedBy', mockBlockedBy);
 
         // eslint-disable-next-line global-require
         jobs = require('../lib/jobs');
@@ -66,11 +70,15 @@ describe('Jobs Unit Test', () => {
     describe('start', () => {
         it('constructs start job correctly', () =>
             assert.deepEqual(jobs.start, {
-                plugins: ['retry'],
+                plugins: ['Retry', mockBlockedBy],
                 pluginOptions: {
-                    retry: {
+                    Retry: {
                         retryLimit: 3,
                         retryDelay: 5
+                    },
+                    BlockedBy: {
+                        enqueueTimeout: 10000,
+                        lockTimeout: 7200
                     }
                 },
                 perform: jobs.start.perform
@@ -127,11 +135,15 @@ describe('Jobs Unit Test', () => {
     describe('stop', () => {
         it('constructs stop job correctly', () =>
             assert.deepEqual(jobs.stop, {
-                plugins: ['retry'],
+                plugins: ['Retry', mockBlockedBy],
                 pluginOptions: {
-                    retry: {
+                    Retry: {
                         retryLimit: 3,
                         retryDelay: 5
+                    },
+                    BlockedBy: {
+                        enqueueTimeout: 10000,
+                        lockTimeout: 7200
                     }
                 },
                 perform: jobs.stop.perform

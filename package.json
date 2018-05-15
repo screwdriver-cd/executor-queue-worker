@@ -45,14 +45,14 @@
   "dependencies": {
     "config": "^1.26.1",
     "ioredis": "^3.1.4",
-    "node-resque": "^4.0.7",
-    "request": "^2.81.0",
-    "screwdriver-executor-docker": "^2.2.2",
+    "node-resque": "^5.3.0",
+    "request": "^2.86.0",
+    "screwdriver-executor-docker": "^2.3.4",
     "screwdriver-executor-jenkins": "^3.0.0",
     "screwdriver-executor-k8s": "^11.1.0",
-    "screwdriver-executor-k8s-vm": "^2.3.1",
-    "screwdriver-executor-router": "^1.0.1",
-    "winston": "^2.3.1"
+    "screwdriver-executor-k8s-vm": "^2.4.1",
+    "screwdriver-executor-router": "^1.0.5",
+    "winston": "^2.4.2"
   },
   "release": {
     "debug": false,

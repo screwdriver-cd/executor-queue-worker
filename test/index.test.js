@@ -33,8 +33,8 @@ describe('Index Test', () => {
     };
 
     let mockJobs;
-    let multiWorker;
-    let scheduler;
+    let MultiWorker;
+    let Scheduler;
     let nrMockClass;
     let spyMultiWorker;
     let spyScheduler;
@@ -61,23 +61,23 @@ describe('Index Test', () => {
         mockJobs = {
             start: sinon.stub()
         };
-        multiWorker = function () {
-            this.start = () => {};
-            this.end = sinon.stub();
+        MultiWorker = {
+            start: () => {},
+            end: sinon.stub()
         };
-        scheduler = function () {
-            this.start = () => {};
-            this.connect = () => {};
-            this.end = sinon.stub();
+        Scheduler = {
+            start: () => {},
+            connect: async () => {},
+            end: sinon.stub()
         };
-        util.inherits(multiWorker, EventEmitter);
-        util.inherits(scheduler, EventEmitter);
+        util.inherits(MultiWorker, EventEmitter);
+        util.inherits(Scheduler, EventEmitter);
         nrMockClass = {
-            multiWorker,
-            scheduler
+            MultiWorker,
+            Scheduler
         };
-        spyMultiWorker = sinon.spy(nrMockClass, 'multiWorker');
-        spyScheduler = sinon.spy(nrMockClass, 'scheduler');
+        spyMultiWorker = sinon.spy(nrMockClass, 'MultiWorker');
+        spyScheduler = sinon.spy(nrMockClass, 'Scheduler');
         winstonMock = {
             info: sinon.stub(),
             error: sinon.stub()
@@ -105,8 +105,8 @@ describe('Index Test', () => {
         // eslint-disable-next-line global-require
         index = require('../index.js');
         supportFunction = index.supportFunction;
-        testWorker = index.multiWorker;
-        testScheduler = index.scheduler;
+        testWorker = index.MultiWorker;
+        testScheduler = index.Scheduler;
     });
 
     afterEach(() => {
@@ -119,7 +119,7 @@ describe('Index Test', () => {
         mockery.disable();
     });
 
-    describe('supportFunction', () => {
+    describe.only('supportFunction', () => {
         it('logs correct message when successfully update build failure status', (done) => {
             requestMock.yieldsAsync(null, { statusCode: 200 });
 
