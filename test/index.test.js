@@ -36,8 +36,6 @@ describe('Index Test', () => {
     let MultiWorker;
     let Scheduler;
     let nrMockClass;
-    let spyMultiWorker;
-    let spyScheduler;
     let winstonMock;
     let requestMock;
     let redisConfigMock;
@@ -61,23 +59,21 @@ describe('Index Test', () => {
         mockJobs = {
             start: sinon.stub()
         };
-        MultiWorker = {
-            start: () => {},
-            end: sinon.stub()
-        };
-        Scheduler = {
-            start: () => {},
-            connect: async () => {},
-            end: sinon.stub()
-        };
+        MultiWorker = sinon.stub();
+        MultiWorker.prototype.start = () => {};
+        MultiWorker.prototype.end = sinon.stub();
+
+        Scheduler = sinon.stub();
+        Scheduler.prototype.start = () => {};
+        Scheduler.prototype.connect = async () => {};
+        Scheduler.prototype.end = sinon.stub();
+
         util.inherits(MultiWorker, EventEmitter);
         util.inherits(Scheduler, EventEmitter);
         nrMockClass = {
             MultiWorker,
             Scheduler
         };
-        spyMultiWorker = sinon.spy(nrMockClass, 'MultiWorker');
-        spyScheduler = sinon.spy(nrMockClass, 'Scheduler');
         winstonMock = {
             info: sinon.stub(),
             error: sinon.stub()
@@ -105,8 +101,8 @@ describe('Index Test', () => {
         // eslint-disable-next-line global-require
         index = require('../index.js');
         supportFunction = index.supportFunction;
-        testWorker = index.MultiWorker;
-        testScheduler = index.Scheduler;
+        testWorker = index.multiWorker;
+        testScheduler = index.scheduler;
     });
 
     afterEach(() => {
@@ -119,7 +115,7 @@ describe('Index Test', () => {
         mockery.disable();
     });
 
-    describe.only('supportFunction', () => {
+    describe('supportFunction', () => {
         it('logs correct message when successfully update build failure status', (done) => {
             requestMock.yieldsAsync(null, { statusCode: 200 });
 
@@ -277,7 +273,7 @@ describe('Index Test', () => {
                 toDisconnectProcessors: true
             };
 
-            assert.calledWith(spyMultiWorker, sinon.match(expectedConfig), sinon.match({
+            assert.calledWith(MultiWorker, sinon.match(expectedConfig), sinon.match({
                 start: mockJobs.start
             }));
         });
@@ -301,7 +297,7 @@ describe('Index Test', () => {
                 connection: 'mockRedisConfig'
             };
 
-            assert.calledWith(spyScheduler, sinon.match(expectedConfig));
+            assert.calledWith(Scheduler, sinon.match(expectedConfig));
         });
     });
 });
