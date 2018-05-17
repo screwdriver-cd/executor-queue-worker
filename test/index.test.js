@@ -149,38 +149,35 @@ describe('Index Test', () => {
             });
         });
 
-        it('logs error and then end scheduler when it fails to end worker', (done) => {
+        it('logs error and then end scheduler when it fails to end worker', async () => {
             const expectedErr = new Error('failed');
 
-            testWorker.end.callsArgWith(0, expectedErr);
-            testScheduler.end.callsArgWith(0, null);
+            testWorker.end = sinon.stub().rejects(expectedErr);
+            testScheduler.end = sinon.stub().resolves(null);
 
-            supportFunction.shutDownAll(testWorker, testScheduler);
+            await supportFunction.shutDownAll(testWorker, testScheduler);
             assert.calledWith(winstonMock.error, `failed to end the worker: ${expectedErr}`);
             assert.calledOnce(testScheduler.end);
             assert.calledWith(processExitMock, 0);
-            done();
         });
 
-        it('logs error and exit with 128 when it fails to end scheduler', (done) => {
+        it('logs error and exit with 128 when it fails to end scheduler', async () => {
             const expectedErr = new Error('failed');
 
-            testWorker.end.callsArgWith(0, null);
-            testScheduler.end.callsArgWith(0, expectedErr);
+            testWorker.end = sinon.stub().resolves(null);
+            testScheduler.end = sinon.stub().rejects(expectedErr);
 
-            supportFunction.shutDownAll(testWorker, testScheduler);
+            await supportFunction.shutDownAll(testWorker, testScheduler);
             assert.calledWith(winstonMock.error, `failed to end the scheduler: ${expectedErr}`);
             assert.calledWith(processExitMock, 128);
-            done();
         });
 
-        it('exit with 0 when it successfully ends both scheduler and worker', (done) => {
-            testWorker.end.callsArgWith(0, null);
-            testScheduler.end.callsArgWith(0, null);
+        it('exit with 0 when it successfully ends both scheduler and worker', async () => {
+            testWorker.end = sinon.stub().resolves(null);
+            testScheduler.end = sinon.stub().resolves(null);
 
-            supportFunction.shutDownAll(testWorker, testScheduler);
+            await supportFunction.shutDownAll(testWorker, testScheduler);
             assert.calledWith(processExitMock, 0);
-            done();
         });
     });
 
@@ -278,14 +275,13 @@ describe('Index Test', () => {
             }));
         });
 
-        it('shuts down worker and scheduler when received SIGTERM signal', (done) => {
+        it('shuts down worker and scheduler when received SIGTERM signal', async () => {
             const shutDownAllMock = sinon.stub();
 
             index.supportFunction.shutDownAll = shutDownAllMock;
 
-            process.once('SIGTERM', () => {
+            process.once('SIGTERM', async () => {
                 assert.calledOnce(shutDownAllMock);
-                done();
             });
             process.kill(process.pid, 'SIGTERM');
         });

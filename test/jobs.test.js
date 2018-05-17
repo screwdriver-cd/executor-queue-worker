@@ -167,6 +167,7 @@ describe('Jobs Unit Test', () => {
                 assert.isNull(result);
                 assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
                 assert.calledWith(mockRedisObj.hdel, 'buildConfigs', fullConfig.buildId);
+                assert.calledWith(mockRedisObj.del, 'running_job_777');
                 assert.calledWith(mockExecutor.stop, {
                     annotations: fullConfig.annotations,
                     buildId: fullConfig.buildId

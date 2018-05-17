@@ -138,12 +138,12 @@ async function boot() {
 
     await scheduler.connect();
     scheduler.start();
+
+    // Shut down workers before exit the process
+    process.on('SIGTERM', supportFunction.shutDownAll(multiWorker, scheduler));
 }
 
 boot();
-
-// Shut down workers before exit the process
-process.on('SIGTERM', () => supportFunction.shutDownAll(multiWorker, scheduler));
 
 module.exports = {
     jobs,
