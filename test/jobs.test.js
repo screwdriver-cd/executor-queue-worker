@@ -94,7 +94,7 @@ describe('Jobs Unit Test', () => {
                         retryDelay: 5
                     },
                     BlockedBy: {
-                        reenqueueWaitTime: 300000,
+                        reenqueueWaitTime: 300,
                         lockTimeout: 7200
                     }
                 },
