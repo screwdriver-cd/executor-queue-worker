@@ -18,10 +18,13 @@ describe('Plugin Test', () => {
     const mockJob = {};
     const mockFunc = () => {};
     const mockQueue = 'queuename';
+    const runningJobsPrefix = 'mockRunningJobsPrefix_';
+    const key = `${runningJobsPrefix}${jobId}`;
     let mockWorker;
     let mockRedis;
     let BlockedBy;
     let blockedBy;
+    let mockRedisConfig;
 
     before(() => {
         mockery.enable({
@@ -44,8 +47,12 @@ describe('Plugin Test', () => {
                 enqueueIn: sinon.stub().resolves()
             }
         };
+        mockRedisConfig = {
+            runningJobsPrefix
+        };
 
         mockery.registerMock('ioredis', mockRedis);
+        mockery.registerMock('../config/redis', mockRedisConfig);
 
         // eslint-disable-next-line global-require
         BlockedBy = require('../lib/BlockedBy.js').BlockedBy;
@@ -65,8 +72,6 @@ describe('Plugin Test', () => {
     describe('BlockedBy', () => {
         describe('beforePerform', () => {
             it('set the current jobid if not blocked', async () => {
-                const key = `running_job_${jobId}`;
-
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByIDs);
                 assert.calledWith(mockRedis.set, key, true);
@@ -85,7 +90,6 @@ describe('Plugin Test', () => {
             });
 
             it('use lockTimeout option for expiring key', async () => {
-                const key = `running_job_${jobId}`;
                 const lockTimeout = 60;
 
                 blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {

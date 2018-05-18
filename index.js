@@ -72,8 +72,6 @@ async function shutDownAll(worker, scheduler) {
 }
 
 const supportFunction = { updateBuildStatus, shutDownAll };
-
-/* eslint-disable new-cap, max-len */
 const multiWorker = new NodeResque.MultiWorker({
     connection: connectionDetails,
     queues: [`${queuePrefix}builds`],
@@ -92,6 +90,7 @@ const scheduler = new NodeResque.Scheduler({ connection: connectionDetails });
  * @return {Promise}
  */
 async function boot() {
+    /* eslint-disable max-len */
     multiWorker.on('start', workerId =>
         winston.info(`worker[${workerId}] started`));
     multiWorker.on('end', workerId =>
@@ -112,6 +111,7 @@ async function boot() {
         winston.error(`worker[${workerId}] error ${queue} ${JSON.stringify(job)} >> ${error}`));
     multiWorker.on('pause', workerId =>
         winston.info(`worker[${workerId}] paused`));
+    /* eslint-enable max-len */
 
     // multiWorker emitters
     multiWorker.on('internalError', error =>
