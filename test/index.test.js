@@ -173,8 +173,8 @@ describe('Index Test', () => {
         });
 
         it('exit with 0 when it successfully ends both scheduler and worker', async () => {
-            testWorker.end = sinon.stub().resolves(null);
-            testScheduler.end = sinon.stub().resolves(null);
+            testWorker.end.resolves();
+            testScheduler.end.resolves();
 
             await supportFunction.shutDownAll(testWorker, testScheduler);
             assert.calledWith(processExitMock, 0);

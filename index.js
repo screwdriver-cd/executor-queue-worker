@@ -87,7 +87,7 @@ const multiWorker = new NodeResque.MultiWorker({
 const scheduler = new NodeResque.Scheduler({ connection: connectionDetails });
 
 /**
- * Start scheduler
+ * Start worker & scheduler
  * @method boot
  * @return {Promise}
  */
@@ -140,7 +140,7 @@ async function boot() {
     scheduler.start();
 
     // Shut down workers before exit the process
-    process.on('SIGTERM', supportFunction.shutDownAll(multiWorker, scheduler));
+    process.on('SIGTERM', async () => supportFunction.shutDownAll(multiWorker, scheduler));
 }
 
 boot();
