@@ -34,7 +34,7 @@ A callback of `fn(err, result)`, where `err` is an Error that was encountered (i
 is the data that the execution engine returns.
 
 #### Stop
-##### Parameters
+##### Required Parameters
 | Parameter        | Type  |  Description |
 | :-------------   | :---- | :-------------|
 | config             | Object | Configuration Object |
