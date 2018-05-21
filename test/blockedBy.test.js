@@ -13,7 +13,7 @@ describe('Plugin Test', () => {
     const jobId = 777;
     const mockArgs = [{
         jobId,
-        blockedBy: blockedByIDs
+        blockedBy: '111,222'
     }];
     const mockJob = {};
     const mockFunc = () => {};
