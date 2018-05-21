@@ -74,7 +74,7 @@ describe('Plugin Test', () => {
             it('set the current jobid if not blocked', async () => {
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByIDs);
-                assert.calledWith(mockRedis.set, key, true);
+                assert.calledWith(mockRedis.set, key, 1);
                 assert.calledWith(mockRedis.expire, key, DEFAULT_LOCKTIMEOUT);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
             });
