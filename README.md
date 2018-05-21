@@ -23,6 +23,8 @@ npm install screwdriver-queue-worker
 | config.buildId     | String | The unique ID for a build |
 | config.container   | String | Container for the build to run in |
 | config.token       | String | JWT to act on behalf of the build |
+| config.jobId       | String | Job that this build belongs to|
+| config.blockedBy   | String | Jobs that are blocking this job |
 
 ##### Expected Outcome
 The start function is expected to create a build in the designated execution engine.
@@ -38,6 +40,8 @@ is the data that the execution engine returns.
 | config             | Object | Configuration Object |
 | config.annotations | Object | Optional key-value object |
 | config.buildId     | String | The unique ID for a build |
+| config.jobId       | String | Job that this build belongs to|
+| config.blockedBy   | String | Jobs that are blocking this job |
 
 ##### Expected Outcome
 The stop function is expected to stop/cleanup a task in the desginated execution engine.
