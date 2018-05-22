@@ -137,3 +137,10 @@ redis:
     prefix: REDIS_QUEUE_PREFIX
     # Flag to enable client for TLS-based communication
     tls: REDIS_TLS_ENABLED
+
+plugins:
+    blockedBy:
+        # re-enqueue in _ mins if blocked
+        reenqueueWaitTime: PLUGIN_BLOCKEDBY_REENQUEUE_WAIT_TIME
+        # job is blocking for maximum _ mins
+        blockTimeout: PLUGIN_BLOCKEDBY_BLOCK_TIMEOUT
