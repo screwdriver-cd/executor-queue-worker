@@ -96,8 +96,8 @@ describe('Jobs Unit Test', () => {
                         retryDelay: 5
                     },
                     BlockedBy: {
-                        reenqueueWaitTime: 300,
-                        lockTimeout: 7200
+                        reenqueueWaitTime: 2,
+                        blockTimeout: 120
                     }
                 },
                 perform: jobs.start.perform

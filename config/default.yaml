@@ -80,3 +80,9 @@ redis:
     # prefix: 'beta-'
     # Flag to enable client for TLS-based communication
     tls: false
+plugins:
+    blockedby:
+      # re-enqueue in 2 mins if blocked
+      reenqueueWaitTime: 2
+      # job is blocking for maximum 120 mins = build timeout
+      blockTimeout: 120

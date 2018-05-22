@@ -7,8 +7,8 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Plugin Test', () => {
-    const DEFAULT_LOCKTIMEOUT = 7200;
-    const DEFAULT_ENQUEUETIME = 300;
+    const DEFAULT_BLOCKTIMEOUT = 120;
+    const DEFAULT_ENQUEUETIME = 2;
     const jobId = 777;
     const mockArgs = [{
         jobId,
@@ -75,7 +75,7 @@ describe('Plugin Test', () => {
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByKeys);
                 assert.calledWith(mockRedis.set, key, '');
-                assert.calledWith(mockRedis.expire, key, DEFAULT_LOCKTIMEOUT);
+                assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
             });
 
@@ -86,22 +86,22 @@ describe('Plugin Test', () => {
                 assert.notCalled(mockRedis.set);
                 assert.notCalled(mockRedis.expire);
                 assert.calledWith(mockWorker.queueObject.enqueueIn,
-                    DEFAULT_ENQUEUETIME * 1000, mockQueue, mockFunc, mockArgs);
+                    DEFAULT_ENQUEUETIME * 1000 * 60, mockQueue, mockFunc, mockArgs);
             });
 
             it('use lockTimeout option for expiring key', async () => {
-                const lockTimeout = 60;
+                const blockTimeout = 1;
 
                 blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
-                    lockTimeout
+                    blockTimeout
                 });
 
                 await blockedBy.beforePerform();
-                assert.calledWith(mockRedis.expire, key, lockTimeout);
+                assert.calledWith(mockRedis.expire, key, 60);
             });
 
             it('use reenqueueWaitTime option for enqueueing', async () => {
-                const reenqueueWaitTime = 120;
+                const reenqueueWaitTime = 2;
 
                 mockRedis.mget.resolves([true, null]);
                 blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
@@ -110,7 +110,7 @@ describe('Plugin Test', () => {
 
                 await blockedBy.beforePerform();
                 assert.calledWith(mockWorker.queueObject.enqueueIn,
-                    reenqueueWaitTime * 1000, mockQueue, mockFunc, mockArgs);
+                    120000, mockQueue, mockFunc, mockArgs);
             });
         });
 
