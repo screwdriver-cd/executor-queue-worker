@@ -55,7 +55,9 @@ describe('Jobs Unit Test', () => {
         mockRedis = sinon.stub().returns(mockRedisObj);
         mockery.registerMock('ioredis', mockRedis);
 
-        mockBlockedBy = sinon.stub().returns();
+        mockBlockedBy = {
+            BlockedBy: sinon.stub().returns()
+        };
         mockery.registerMock('./BlockedBy', mockBlockedBy);
 
         // eslint-disable-next-line global-require
@@ -87,7 +89,7 @@ describe('Jobs Unit Test', () => {
     describe('start', () => {
         it('constructs start job correctly', () =>
             assert.deepEqual(jobs.start, {
-                plugins: ['Retry', mockBlockedBy],
+                plugins: ['Retry', mockBlockedBy.BlockedBy],
                 pluginOptions: {
                     Retry: {
                         retryLimit: 3,
