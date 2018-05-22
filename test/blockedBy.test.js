@@ -9,7 +9,6 @@ sinon.assert.expose(assert, { prefix: '' });
 describe('Plugin Test', () => {
     const DEFAULT_LOCKTIMEOUT = 7200;
     const DEFAULT_ENQUEUETIME = 300;
-    const blockedByIDs = [111, 222];
     const jobId = 777;
     const mockArgs = [{
         jobId,
@@ -20,6 +19,7 @@ describe('Plugin Test', () => {
     const mockQueue = 'queuename';
     const runningJobsPrefix = 'mockRunningJobsPrefix_';
     const key = `${runningJobsPrefix}${jobId}`;
+    const blockedByKeys = [`${runningJobsPrefix}111`, `${runningJobsPrefix}222`];
     let mockWorker;
     let mockRedis;
     let BlockedBy;
@@ -73,8 +73,8 @@ describe('Plugin Test', () => {
         describe('beforePerform', () => {
             it('set the current jobid if not blocked', async () => {
                 await blockedBy.beforePerform();
-                assert.calledWith(mockRedis.mget, blockedByIDs);
-                assert.calledWith(mockRedis.set, key, 1);
+                assert.calledWith(mockRedis.mget, blockedByKeys);
+                assert.calledWith(mockRedis.set, key, '');
                 assert.calledWith(mockRedis.expire, key, DEFAULT_LOCKTIMEOUT);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
             });
@@ -82,7 +82,7 @@ describe('Plugin Test', () => {
             it('re-enqueue if blocked', async () => {
                 mockRedis.mget.resolves([true, null]);
                 await blockedBy.beforePerform();
-                assert.calledWith(mockRedis.mget, blockedByIDs);
+                assert.calledWith(mockRedis.mget, blockedByKeys);
                 assert.notCalled(mockRedis.set);
                 assert.notCalled(mockRedis.expire);
                 assert.calledWith(mockWorker.queueObject.enqueueIn,
