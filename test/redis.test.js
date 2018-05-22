@@ -46,7 +46,8 @@ describe('redis config test', () => {
                 port: '1234',
                 database: 0
             },
-            queuePrefix: 'mockPrefix_'
+            queuePrefix: 'mockPrefix_',
+            runningJobsPrefix: 'mockPrefix_running_job_'
         });
     });
 

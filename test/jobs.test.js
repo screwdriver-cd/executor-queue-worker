@@ -3,6 +3,22 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
+const fullConfig = {
+    annotations: {
+        'beta.screwdriver.cd/executor': 'k8s'
+    },
+    buildId: 8609,
+    jobId: 777,
+    blockedBy: [777],
+    container: 'node:4',
+    apiUri: 'http://api.com',
+    token: 'asdf'
+};
+const partialConfig = {
+    buildId: 8609,
+    jobId: 777,
+    blockedBy: [777]
+};
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -12,6 +28,7 @@ describe('Jobs Unit Test', () => {
     let mockExecutorRouter;
     let mockRedis;
     let mockRedisObj;
+    let mockBlockedBy;
 
     before(() => {
         mockery.enable({
@@ -28,7 +45,8 @@ describe('Jobs Unit Test', () => {
 
         mockRedisObj = {
             hget: sinon.stub(),
-            hdel: sinon.stub()
+            hdel: sinon.stub(),
+            del: sinon.stub()
         };
 
         mockExecutorRouter = function () { return mockExecutor; };
@@ -36,6 +54,9 @@ describe('Jobs Unit Test', () => {
 
         mockRedis = sinon.stub().returns(mockRedisObj);
         mockery.registerMock('ioredis', mockRedis);
+
+        mockBlockedBy = sinon.stub().returns();
+        mockery.registerMock('./BlockedBy', mockBlockedBy);
 
         // eslint-disable-next-line global-require
         jobs = require('../lib/jobs');
@@ -66,11 +87,15 @@ describe('Jobs Unit Test', () => {
     describe('start', () => {
         it('constructs start job correctly', () =>
             assert.deepEqual(jobs.start, {
-                plugins: ['retry'],
+                plugins: ['Retry', mockBlockedBy],
                 pluginOptions: {
-                    retry: {
+                    Retry: {
                         retryLimit: 3,
                         retryDelay: 5
+                    },
+                    BlockedBy: {
+                        reenqueueWaitTime: 300,
+                        lockTimeout: 7200
                     }
                 },
                 perform: jobs.start.perform
@@ -78,26 +103,16 @@ describe('Jobs Unit Test', () => {
         );
 
         it('starts a job', () => {
-            const expectedConfig = JSON.stringify({
-                annotations: {
-                    'beta.screwdriver.cd/executor': 'k8s'
-                },
-                buildId: 8609,
-                container: 'node:4',
-                apiUri: 'http://api.com',
-                token: 'asdf'
-            });
-
             mockExecutor.start.resolves(null);
-            mockRedisObj.hget.resolves(expectedConfig);
+            mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
 
-            return jobs.start.perform({ buildId: expectedConfig.buildId }, (err, result) => {
-                assert.isNull(err);
-                assert.isNull(result);
+            return jobs.start.perform(partialConfig)
+                .then((result) => {
+                    assert.isNull(result);
 
-                assert.calledWith(mockExecutor.start, JSON.parse(expectedConfig));
-                assert.calledWith(mockRedisObj.hget, 'buildConfigs', expectedConfig.buildId);
-            });
+                    assert.calledWith(mockExecutor.start, fullConfig);
+                    assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
+                });
         });
 
         it('returns an error from executor', () => {
@@ -108,7 +123,9 @@ describe('Jobs Unit Test', () => {
 
             mockExecutor.start.rejects(expectedError);
 
-            return jobs.start.perform({}, (err) => {
+            return jobs.start.perform({}).then(() => {
+                assert.fail('Should not get here');
+            }, (err) => {
                 assert.deepEqual(err, expectedError);
             });
         });
@@ -118,7 +135,9 @@ describe('Jobs Unit Test', () => {
 
             mockRedisObj.hget.rejects(expectedError);
 
-            return jobs.start.perform({}, (err) => {
+            return jobs.start.perform({}).then(() => {
+                assert.fail('Should not get here');
+            }, (err) => {
                 assert.deepEqual(err, expectedError);
             });
         });
@@ -127,9 +146,9 @@ describe('Jobs Unit Test', () => {
     describe('stop', () => {
         it('constructs stop job correctly', () =>
             assert.deepEqual(jobs.stop, {
-                plugins: ['retry'],
+                plugins: ['Retry'],
                 pluginOptions: {
-                    retry: {
+                    Retry: {
                         retryLimit: 3,
                         retryDelay: 5
                     }
@@ -139,54 +158,33 @@ describe('Jobs Unit Test', () => {
         );
 
         it('stops a job', () => {
-            const expectedConfig = {
-                annotations: {
-                    'beta.screwdriver.cd/executor': 'k8s'
-                },
-                buildId: 8609,
-                container: 'node:4',
-                apiUri: 'http://api.com',
-                token: 'asdf'
-            };
-
             mockExecutor.stop.resolves(null);
-            mockRedisObj.hget.resolves(JSON.stringify(expectedConfig));
+            mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
             mockRedisObj.hdel.resolves(1);
+            mockRedisObj.del.resolves(null);
 
-            return jobs.stop.perform({ buildId: expectedConfig.buildId }, (err, result) => {
-                assert.isNull(err);
+            return jobs.stop.perform(partialConfig).then((result) => {
                 assert.isNull(result);
-
-                assert.calledWith(mockRedisObj.hget, 'buildConfigs', expectedConfig.buildId);
-                assert.calledWith(mockRedisObj.hdel, 'buildConfigs', expectedConfig.buildId);
+                assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
+                assert.calledWith(mockRedisObj.hdel, 'buildConfigs', fullConfig.buildId);
+                assert.calledWith(mockRedisObj.del, 'running_job_777');
                 assert.calledWith(mockExecutor.stop, {
-                    annotations: expectedConfig.annotations,
-                    buildId: expectedConfig.buildId
+                    annotations: fullConfig.annotations,
+                    buildId: fullConfig.buildId
                 });
             });
         });
 
         it('stop a build anyway when redis fails to get a config', () => {
-            const expectedConfig = {
-                annotations: {
-                    'beta.screwdriver.cd/executor': 'k8s'
-                },
-                buildId: 8609,
-                container: 'node:4',
-                apiUri: 'http://api.com',
-                token: 'asdf'
-            };
             const expectedError = new Error('hget error');
 
             mockExecutor.stop.resolves(null);
             mockRedisObj.hget.rejects(expectedError);
 
-            return jobs.stop.perform({ buildId: expectedConfig.buildId }, (err, result) => {
-                assert.isNull(err);
+            return jobs.stop.perform(partialConfig).then((result) => {
                 assert.isNull(result);
-
-                assert.calledWith(mockRedisObj.hget, 'buildConfigs', expectedConfig.buildId);
-                assert.calledWith(mockExecutor.stop, { buildId: expectedConfig.buildId });
+                assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
+                assert.calledWith(mockExecutor.stop, { buildId: fullConfig.buildId });
             });
         });
 
@@ -197,7 +195,9 @@ describe('Jobs Unit Test', () => {
             mockRedisObj.hdel.resolves(1);
             mockExecutor.stop.rejects(expectedError);
 
-            return jobs.stop.perform({}, (err) => {
+            return jobs.stop.perform({}).then(() => {
+                assert.fail('Should not get here');
+            }, (err) => {
                 assert.deepEqual(err, expectedError);
             });
         });
@@ -208,7 +208,9 @@ describe('Jobs Unit Test', () => {
             mockRedisObj.hget.resolves('{}');
             mockRedisObj.hdel.rejects(expectedError);
 
-            return jobs.stop.perform({}, (err) => {
+            return jobs.stop.perform({}).then(() => {
+                assert.fail('Should not get here');
+            }, (err) => {
                 assert.deepEqual(err, expectedError);
             });
         });
