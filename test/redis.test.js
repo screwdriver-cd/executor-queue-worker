@@ -47,7 +47,8 @@ describe('redis config test', () => {
                 database: 0
             },
             queuePrefix: 'mockPrefix_',
-            runningJobsPrefix: 'mockPrefix_running_job_'
+            runningJobsPrefix: 'mockPrefix_running_job_',
+            waitingJobsPrefix: 'mockPrefix_waiting_job_'
         });
     });
 
