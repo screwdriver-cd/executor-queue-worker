@@ -17,9 +17,11 @@ const queuePrefix = redisConfig.prefix || '';
 
 // Use for blockedby plugin
 const runningJobsPrefix = `${queuePrefix}running_job_`;
+const waitingJobsPrefix = `${queuePrefix}waiting_job_`;
 
 module.exports = {
     connectionDetails,
     queuePrefix,
-    runningJobsPrefix
+    runningJobsPrefix,
+    waitingJobsPrefix
 };
