@@ -82,7 +82,7 @@ redis:
     tls: false
 plugins:
     blockedBy:
-      # re-enqueue in 2 mins if blocked
-      reenqueueWaitTime: 2
+      # re-enqueue in 1 mins if blocked
+      reenqueueWaitTime: 1
       # job is blocking for maximum 120 mins = build timeout
       blockTimeout: 120

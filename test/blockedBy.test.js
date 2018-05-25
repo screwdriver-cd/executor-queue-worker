@@ -8,7 +8,7 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('Plugin Test', () => {
     const DEFAULT_BLOCKTIMEOUT = 120;
-    const DEFAULT_ENQUEUETIME = 2;
+    const DEFAULT_ENQUEUETIME = 1;
     const jobId = 777;
     const buildId = 3;
     const buildIdStr = '3';
@@ -166,7 +166,7 @@ describe('Plugin Test', () => {
             });
 
             it('use reenqueueWaitTime option for enqueueing', async () => {
-                const reenqueueWaitTime = 2;
+                const reenqueueWaitTime = 5;
 
                 mockRedis.mget.resolves([true, null]);
                 blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
@@ -175,7 +175,7 @@ describe('Plugin Test', () => {
 
                 await blockedBy.beforePerform();
                 assert.calledWith(mockWorker.queueObject.enqueueIn,
-                    120000, mockQueue, mockFunc, mockArgs);
+                    300000, mockQueue, mockFunc, mockArgs);
             });
         });
 
