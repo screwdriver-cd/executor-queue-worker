@@ -81,6 +81,10 @@ describe('Plugin Test', () => {
     });
 
     describe('BlockedBy', () => {
+        it('constructor', async () => {
+            assert.equal(blockedBy.name, 'BlockedBy');
+        });
+
         describe('beforePerform', () => {
             it('proceeds if not blocked', async () => {
                 await blockedBy.beforePerform();
