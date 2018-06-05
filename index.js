@@ -3,9 +3,12 @@
 const NodeResque = require('node-resque');
 const jobs = require('./lib/jobs');
 const Redis = require('ioredis');
+const hoek = require('hoek');
 const request = require('request');
 const winston = require('winston');
 const { connectionDetails, queuePrefix } = require('./config/redis');
+
+console.log(connectionDetails);
 const redis = new Redis(connectionDetails.port, connectionDetails.host, connectionDetails.options);
 
 /**
@@ -22,6 +25,9 @@ const redis = new Redis(connectionDetails.port, connectionDetails.host, connecti
 function updateBuildStatus(updateConfig, callback) {
     const { failure, job, queue, workerId } = updateConfig;
     const { buildId } = updateConfig.job.args[0];
+    const status = hoek.reach(updateConfig, 'status', { default: 'FAILURE' });
+    const statusMessage = hoek.reach(updateConfig, 'statusMessage',
+        { default: 'Build failed to start due to infrastructure error' });
 
     return redis.hget(`${queuePrefix}buildConfigs`, buildId)
         .then(JSON.parse)
@@ -30,20 +36,24 @@ function updateBuildStatus(updateConfig, callback) {
             method: 'PUT',
             uri: `${fullBuildConfig.apiUri}/v4/builds/${buildId}`,
             payload: {
-                status: 'FAILURE',
-                statusMessage: 'Build failed to start due to infrastructure error'
+                status,
+                statusMessage
             },
             auth: {
                 bearer: fullBuildConfig.token
             }
         }, (err, response) => {
             if (!err && response.statusCode === 200) {
-                // eslint-disable-next-line max-len
-                winston.error(`worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`);
+                if (workerId) {
+                    // eslint-disable-next-line max-len
+                    winston.error(`worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`);
+                }
                 callback(null);
             } else {
+                if (workerId) {
                 // eslint-disable-next-line max-len
-                winston.error(`worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> ${failure} ${err} ${response}`);
+                    winston.error(`worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> ${failure} ${err} ${response}`);
+                }
                 callback(err);
             }
         }));

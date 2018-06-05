@@ -6,7 +6,7 @@ const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe('Plugin Test', () => {
+describe.only('Plugin Test', () => {
     const DEFAULT_BLOCKTIMEOUT = 120;
     const DEFAULT_ENQUEUETIME = 1;
     const jobId = 777;
@@ -26,6 +26,7 @@ describe('Plugin Test', () => {
     const blockedByKeys = [`${runningJobsPrefix}111`, `${runningJobsPrefix}222`];
     let mockWorker;
     let mockRedis;
+    let requestMock;
     let BlockedBy;
     let blockedBy;
     let mockRedisConfig;
@@ -39,7 +40,7 @@ describe('Plugin Test', () => {
 
     beforeEach(() => {
         mockRedis = {
-            mget: sinon.stub().resolves([null, null]),
+            get: sinon.stub(),
             set: sinon.stub().resolves(),
             expire: sinon.stub().resolves(),
             llen: sinon.stub().resolves(0),
@@ -59,11 +60,16 @@ describe('Plugin Test', () => {
         };
         mockRedisConfig = {
             runningJobsPrefix,
-            waitingJobsPrefix
+            waitingJobsPrefix,
+            connectionDetails: 'mockRedisConfig',
+            queuePrefix: 'mockQueuePrefix_'
         };
+        requestMock = sinon.stub().yieldsAsync(null, { statusCode: 200 });
 
         mockery.registerMock('ioredis', mockRedis);
         mockery.registerMock('../config/redis', mockRedisConfig);
+        mockery.registerMock('./config/redis', mockRedisConfig);
+        mockery.registerMock('request', requestMock);
 
         // eslint-disable-next-line global-require
         BlockedBy = require('../lib/BlockedBy.js').BlockedBy;
@@ -94,10 +100,10 @@ describe('Plugin Test', () => {
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
             });
 
-            it('re-enqueue if blocked', async () => {
-                mockRedis.mget.resolves(['', null]);
+            it.only('re-enqueue if blocked', async () => {
+                mockRedis.get.onCall(0).resolves(true);
+                mockRedis.get.onCall(1).resolves(null);
                 await blockedBy.beforePerform();
-                assert.calledWith(mockRedis.mget, blockedByKeys);
                 assert.notCalled(mockRedis.set);
                 assert.notCalled(mockRedis.expire);
                 assert.calledWith(mockRedis.rpush,

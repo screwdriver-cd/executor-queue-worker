@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "config": "^1.26.1",
+    "hoek": "^5.0.3",
     "ioredis": "^3.1.4",
     "node-resque": "^5.3.0",
     "request": "^2.86.0",
