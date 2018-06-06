@@ -89,7 +89,7 @@ describe('Plugin Test', () => {
             it('proceeds if not blocked', async () => {
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByKeys);
-                assert.calledWith(mockRedis.set, key, '');
+                assert.calledWith(mockRedis.set, key, buildId);
                 assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
             });
@@ -136,7 +136,7 @@ describe('Plugin Test', () => {
                 mockRedis.lindex.resolves('3');
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByKeys);
-                assert.calledWith(mockRedis.set, key, '');
+                assert.calledWith(mockRedis.set, key, buildId);
                 assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
             });
@@ -147,7 +147,7 @@ describe('Plugin Test', () => {
                 mockRedis.llen.onCall(1).resolves(0);
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByKeys);
-                assert.calledWith(mockRedis.set, key, '');
+                assert.calledWith(mockRedis.set, key, buildId);
                 assert.calledWith(mockRedis.lpop, `${waitingJobsPrefix}${jobId}`);
                 assert.calledWith(mockRedis.del, `${waitingJobsPrefix}${jobId}`);
                 assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
