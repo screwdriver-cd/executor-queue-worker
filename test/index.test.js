@@ -8,7 +8,7 @@ const util = require('util');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe.only('Index Test', () => {
+describe('Index Test', () => {
     const worker = 'abc';
     const pid = '111';
     const plugin = {};
@@ -282,7 +282,7 @@ describe.only('Index Test', () => {
         });
 
         it('shuts down worker and scheduler when received SIGTERM signal', async () => {
-            const shutDownAllMock = sinon.stub();
+            const shutDownAllMock = sinon.stub().resolves();
 
             index.shutDownAll = shutDownAllMock;
 
