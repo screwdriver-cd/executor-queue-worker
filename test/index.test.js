@@ -8,7 +8,7 @@ const util = require('util');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe('Index Test', () => {
+describe.only('Index Test', () => {
     const worker = 'abc';
     const pid = '111';
     const plugin = {};
@@ -20,17 +20,16 @@ describe('Index Test', () => {
     const job = { args: [{ buildId: 1 }] };
     const queue = 'testbuilds';
     const failure = 'failed';
-    const updateConfig = { job, queue, workerId, failure };
-    const requestOptions = {
-        auth: { bearer: 'fake' },
-        json: true,
-        method: 'PUT',
-        payload: {
-            status: 'FAILURE',
-            statusMessage: 'Build failed to start due to infrastructure error'
-        },
-        uri: `foo.bar/v4/builds/${job.args[0].buildId}`
-    };
+    // const requestOptions = {
+    //     auth: { bearer: 'fake' },
+    //     json: true,
+    //     method: 'PUT',
+    //     payload: {
+    //         status: 'FAILURE',
+    //         statusMessage: 'Build failed to start due to infrastructure error'
+    //     },
+    //     uri: `foo.bar/v4/builds/${job.args[0].buildId}`
+    // };
 
     let mockJobs;
     let MultiWorker;
@@ -42,8 +41,7 @@ describe('Index Test', () => {
     let index;
     let testWorker;
     let testScheduler;
-    let supportFunction;
-    let updateBuildStatusMock;
+    let helperMock;
     let processExitMock;
     let mockRedis;
     let mockRedisObj;
@@ -79,7 +77,9 @@ describe('Index Test', () => {
             error: sinon.stub()
         };
         requestMock = sinon.stub();
-        updateBuildStatusMock = sinon.stub();
+        helperMock = {
+            updateBuildStatus: sinon.stub()
+        };
         processExitMock = sinon.stub();
         process.exit = processExitMock;
         redisConfigMock = {
@@ -97,10 +97,10 @@ describe('Index Test', () => {
         mockery.registerMock('winston', winstonMock);
         mockery.registerMock('request', requestMock);
         mockery.registerMock('./config/redis', redisConfigMock);
+        mockery.registerMock('./lib/helper', helperMock);
 
         // eslint-disable-next-line global-require
         index = require('../index.js');
-        supportFunction = index.supportFunction;
         testWorker = index.multiWorker;
         testScheduler = index.scheduler;
     });
@@ -115,39 +115,39 @@ describe('Index Test', () => {
         mockery.disable();
     });
 
-    describe('supportFunction', () => {
-        it('logs correct message when successfully update build failure status', (done) => {
-            requestMock.yieldsAsync(null, { statusCode: 200 });
-
-            supportFunction.updateBuildStatus(updateConfig, (err) => {
-                assert.calledWith(mockRedisObj.hget,
-                    'mockQueuePrefix_buildConfigs', job.args[0].buildId);
-                assert.calledWith(requestMock, requestOptions);
-                assert.isNull(err);
-                assert.calledWith(winstonMock.error,
-                // eslint-disable-next-line max-len
-                    `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`
-                );
-                done();
-            });
-        });
-
-        it('logs correct message when fail to update build failure status', (done) => {
-            const requestErr = new Error('failed to update');
-            const response = {};
-
-            requestMock.yieldsAsync(requestErr, response);
-
-            supportFunction.updateBuildStatus(updateConfig, (err) => {
-                assert.calledWith(requestMock, requestOptions);
-                assert.strictEqual(err.message, 'failed to update');
-                assert.calledWith(winstonMock.error,
-                    // eslint-disable-next-line max-len
-                    `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> ${failure} ${requestErr} ${response}`
-                );
-                done();
-            });
-        });
+    describe('shutDownAll', () => {
+        // it('logs correct message when successfully update build failure status', (done) => {
+        //     requestMock.yieldsAsync(null, { statusCode: 200 });
+        //
+        //     supportFunction.updateBuildStatus(updateConfig, (err) => {
+        //         assert.calledWith(mockRedisObj.hget,
+        //             'mockQueuePrefix_buildConfigs', job.args[0].buildId);
+        //         assert.calledWith(requestMock, requestOptions);
+        //         assert.isNull(err);
+        //         assert.calledWith(winstonMock.error,
+        //         // eslint-disable-next-line max-len
+        //             `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`
+        //         );
+        //         done();
+        //     });
+        // });
+        //
+        // it('logs correct message when fail to update build failure status', (done) => {
+        //     const requestErr = new Error('failed to update');
+        //     const response = {};
+        //
+        //     requestMock.yieldsAsync(requestErr, response);
+        //
+        //     supportFunction.updateBuildStatus(updateConfig, (err) => {
+        //         assert.calledWith(requestMock, requestOptions);
+        //         assert.strictEqual(err.message, 'failed to update');
+        //         assert.calledWith(winstonMock.error,
+        //             // eslint-disable-next-line max-len
+        //             `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> ${failure} ${requestErr} ${response}`
+        //         );
+        //         done();
+        //     });
+        // });
 
         it('logs error and then end scheduler when it fails to end worker', async () => {
             const expectedErr = new Error('failed');
@@ -155,7 +155,7 @@ describe('Index Test', () => {
             testWorker.end = sinon.stub().rejects(expectedErr);
             testScheduler.end = sinon.stub().resolves(null);
 
-            await supportFunction.shutDownAll(testWorker, testScheduler);
+            await index.shutDownAll(testWorker, testScheduler);
             assert.calledWith(winstonMock.error, `failed to end the worker: ${expectedErr}`);
             assert.calledOnce(testScheduler.end);
             assert.calledWith(processExitMock, 0);
@@ -167,7 +167,7 @@ describe('Index Test', () => {
             testWorker.end = sinon.stub().resolves(null);
             testScheduler.end = sinon.stub().rejects(expectedErr);
 
-            await supportFunction.shutDownAll(testWorker, testScheduler);
+            await index.shutDownAll(testWorker, testScheduler);
             assert.calledWith(winstonMock.error, `failed to end the scheduler: ${expectedErr}`);
             assert.calledWith(processExitMock, 128);
         });
@@ -176,7 +176,7 @@ describe('Index Test', () => {
             testWorker.end.resolves();
             testScheduler.end.resolves();
 
-            await supportFunction.shutDownAll(testWorker, testScheduler);
+            await index.shutDownAll(testWorker, testScheduler);
             assert.calledWith(processExitMock, 0);
         });
     });
@@ -208,9 +208,15 @@ describe('Index Test', () => {
                 `worker[${workerId}] ${job} success ${queue} ${JSON.stringify(job)} >> ${result}`);
 
             // Mock updateBuildStatus to assert params pass in for the function
-            index.supportFunction.updateBuildStatus = updateBuildStatusMock;
             testWorker.emit('failure', workerId, queue, job, failure);
-            assert.calledWith(updateBuildStatusMock, updateConfig);
+            const updateConfig = {
+                buildId: 1,
+                redisInstance: mockRedisObj,
+                status: 'FAILURE',
+                statusMessage: 'Build failed to start due to infrastructure error'
+            };
+
+            assert.calledWith(helperMock.updateBuildStatus, updateConfig);
 
             testWorker.emit('error', workerId, queue, job, error);
             assert.calledWith(winstonMock.error,
@@ -278,7 +284,7 @@ describe('Index Test', () => {
         it('shuts down worker and scheduler when received SIGTERM signal', async () => {
             const shutDownAllMock = sinon.stub();
 
-            index.supportFunction.shutDownAll = shutDownAllMock;
+            index.shutDownAll = shutDownAllMock;
 
             process.once('SIGTERM', async () => {
                 assert.calledOnce(shutDownAllMock);

@@ -6,7 +6,7 @@ const sinon = require('sinon');
 
 sinon.assert.expose(assert, { prefix: '' });
 
-describe.only('Plugin Test', () => {
+describe('Plugin Test', () => {
     const DEFAULT_BLOCKTIMEOUT = 120;
     const DEFAULT_ENQUEUETIME = 1;
     const jobId = 777;
@@ -100,7 +100,7 @@ describe.only('Plugin Test', () => {
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
             });
 
-            it.only('re-enqueue if blocked', async () => {
+            it('re-enqueue if blocked', async () => {
                 mockRedis.get.onCall(0).resolves(true);
                 mockRedis.get.onCall(1).resolves(null);
                 await blockedBy.beforePerform();
