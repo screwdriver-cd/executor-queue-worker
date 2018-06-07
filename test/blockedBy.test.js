@@ -12,20 +12,15 @@ describe('Plugin Test', () => {
     const jobId = 777;
     const buildId = 3;
     const buildIdStr = '3';
-    const mockArgs = [{
-        jobId,
-        buildId,
-        blockedBy: '111,222,777'
-    }];
     const mockJob = {};
     const mockFunc = () => {};
     const mockQueue = 'queuename';
     const runningJobsPrefix = 'mockRunningJobsPrefix_';
     const waitingJobsPrefix = 'mockRunningJobsPrefix_';
     const key = `${runningJobsPrefix}${jobId}`;
-    const blockedByKeys = [
-        `${runningJobsPrefix}111`, `${runningJobsPrefix}222`, `${runningJobsPrefix}777`];
+    let blockedByKeys;
     let mockWorker;
+    let mockArgs;
     let mockRedis;
     let BlockedBy;
     let blockedBy;
@@ -39,6 +34,14 @@ describe('Plugin Test', () => {
     });
 
     beforeEach(() => {
+        mockArgs = [{
+            jobId,
+            buildId,
+            blockedBy: '111,222,777'
+        }];
+        blockedByKeys = [
+            `${runningJobsPrefix}111`, `${runningJobsPrefix}222`, `${runningJobsPrefix}777`];
+
         mockRedis = {
             mget: sinon.stub().resolves([null, null]),
             set: sinon.stub().resolves(),
@@ -97,15 +100,28 @@ describe('Plugin Test', () => {
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
             });
 
+            it('proceeds if not blocked by self and others', async () => {
+                mockRedis.lrange.resolves([]);
+                mockArgs[0].blockedBy = '777';
+                blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
+                    blockedBySelf: 'false'
+                });
+                await blockedBy.beforePerform();
+                assert.notCalled(mockRedis.mget);
+                assert.calledWith(mockRedis.set, key, buildId);
+                assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
+                assert.notCalled(mockWorker.queueObject.enqueueIn);
+            });
+
             it('do not block by self', async () => {
                 mockRedis.lrange.resolves([]);
                 blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
                     blockedBySelf: 'false'
                 });
+                blockedByKeys = [`${runningJobsPrefix}111`, `${runningJobsPrefix}222`];
 
                 await blockedBy.beforePerform();
-                assert.calledWith(mockRedis.mget, [
-                    `${runningJobsPrefix}111`, `${runningJobsPrefix}222`]);
+                assert.calledWith(mockRedis.mget, blockedByKeys);
                 assert.calledWith(mockRedis.set, key, buildId);
                 assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
