@@ -15,7 +15,7 @@ describe('Plugin Test', () => {
     const mockArgs = [{
         jobId,
         buildId,
-        blockedBy: '111,222'
+        blockedBy: '111,222,777'
     }];
     const mockJob = {};
     const mockFunc = () => {};
@@ -23,7 +23,8 @@ describe('Plugin Test', () => {
     const runningJobsPrefix = 'mockRunningJobsPrefix_';
     const waitingJobsPrefix = 'mockRunningJobsPrefix_';
     const key = `${runningJobsPrefix}${jobId}`;
-    const blockedByKeys = [`${runningJobsPrefix}111`, `${runningJobsPrefix}222`];
+    const blockedByKeys = [
+        `${runningJobsPrefix}111`, `${runningJobsPrefix}222`, `${runningJobsPrefix}777`];
     let mockWorker;
     let mockRedis;
     let BlockedBy;
@@ -68,7 +69,8 @@ describe('Plugin Test', () => {
         // eslint-disable-next-line global-require
         BlockedBy = require('../lib/BlockedBy.js').BlockedBy;
 
-        blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {});
+        blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
+            blockedBySelf: true });
     });
 
     afterEach(() => {
@@ -90,6 +92,20 @@ describe('Plugin Test', () => {
                 mockRedis.lrange.resolves([]);
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByKeys);
+                assert.calledWith(mockRedis.set, key, buildId);
+                assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
+                assert.notCalled(mockWorker.queueObject.enqueueIn);
+            });
+
+            it('do not block by self', async () => {
+                mockRedis.lrange.resolves([]);
+                blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
+                    blockedBySelf: false
+                });
+
+                await blockedBy.beforePerform();
+                assert.calledWith(mockRedis.mget, [
+                    `${runningJobsPrefix}111`, `${runningJobsPrefix}222`]);
                 assert.calledWith(mockRedis.set, key, buildId);
                 assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
