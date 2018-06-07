@@ -46,7 +46,8 @@ describe('Jobs Unit Test', () => {
         mockRedisObj = {
             hget: sinon.stub(),
             hdel: sinon.stub(),
-            del: sinon.stub()
+            del: sinon.stub(),
+            lrem: sinon.stub().resolves()
         };
 
         mockExecutorRouter = function () { return mockExecutor; };
@@ -171,6 +172,7 @@ describe('Jobs Unit Test', () => {
                 assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
                 assert.calledWith(mockRedisObj.hdel, 'buildConfigs', fullConfig.buildId);
                 assert.calledWith(mockRedisObj.del, 'running_job_777');
+                assert.calledWith(mockRedisObj.lrem, 'waiting_job_777', 0, fullConfig.buildId);
                 assert.calledWith(mockExecutor.stop, {
                     annotations: fullConfig.annotations,
                     buildId: fullConfig.buildId
