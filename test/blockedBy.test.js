@@ -100,7 +100,7 @@ describe('Plugin Test', () => {
             it('do not block by self', async () => {
                 mockRedis.lrange.resolves([]);
                 blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
-                    blockedBySelf: false
+                    blockedBySelf: 'false'
                 });
 
                 await blockedBy.beforePerform();
