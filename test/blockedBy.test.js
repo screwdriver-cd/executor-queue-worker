@@ -44,7 +44,6 @@ describe('Plugin Test', () => {
             expire: sinon.stub().resolves(),
             llen: sinon.stub().resolves(0),
             lpop: sinon.stub().resolves(),
-            lindex: sinon.stub().resolves(buildIdStr), // first build waiting
             lrange: sinon.stub().resolves(['4', '5']),
             rpush: sinon.stub().resolves(),
             del: sinon.stub().resolves()
@@ -119,8 +118,8 @@ describe('Plugin Test', () => {
             });
 
             it('re-enqueue if there is the same job waiting but not the same buildId', async () => {
-                mockRedis.llen.resolves(2);
-                mockRedis.lindex.resolves('2');
+                mockRedis.llen.resolves(1);
+                mockRedis.lrange.resolves(['2']);
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByKeys);
                 assert.notCalled(mockRedis.set);
@@ -133,7 +132,7 @@ describe('Plugin Test', () => {
 
             it('proceeds if there is the same job waiting with same buildId', async () => {
                 mockRedis.llen.resolves(2);
-                mockRedis.lindex.resolves('3');
+                mockRedis.lrange.resolves(['5', '3', '4']);
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByKeys);
                 assert.calledWith(mockRedis.set, key, buildId);
@@ -142,9 +141,9 @@ describe('Plugin Test', () => {
             });
 
             it('delete key if is the last job waiting', async () => {
-                mockRedis.lindex.resolves('3');
                 mockRedis.llen.onCall(0).resolves(1);
                 mockRedis.llen.onCall(1).resolves(0);
+                mockRedis.lrange.resolves(['3']);
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByKeys);
                 assert.calledWith(mockRedis.set, key, buildId);
