@@ -159,6 +159,7 @@ describe('Plugin Test', () => {
                 });
                 blockedByKeys = [`${runningJobsPrefix}111`, `${runningJobsPrefix}222`];
                 await blockedBy.beforePerform();
+                assert.calledWith(mockRedis.del, `${waitingJobsPrefix}${jobId}`);
                 assert.calledWith(mockRedis.mget, blockedByKeys);
                 assert.calledWith(mockRedis.mget, blockedByKeys);
                 assert.calledWith(mockRedis.set, key, buildId);
