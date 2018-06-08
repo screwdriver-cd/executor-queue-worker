@@ -151,6 +151,23 @@ describe('Plugin Test', () => {
                     DEFAULT_ENQUEUETIME * 1000 * 60, mockQueue, mockFunc, mockArgs);
             });
 
+            it('proceeds if same job waiting but not same buildId and feature is off', async () => {
+                mockRedis.lrange.resolves(['2']);
+                mockRedis.llen.resolves(1);
+                blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
+                    blockedBySelf: 'false'
+                });
+                blockedByKeys = [`${runningJobsPrefix}111`, `${runningJobsPrefix}222`];
+                await blockedBy.beforePerform();
+                assert.calledWith(mockRedis.mget, blockedByKeys);
+                assert.calledWith(mockRedis.mget, blockedByKeys);
+                assert.calledWith(mockRedis.set, key, buildId);
+                assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
+                assert.notCalled(mockWorker.queueObject.enqueueIn);
+                assert.notCalled(mockRedis.rpush);
+                assert.notCalled(mockWorker.queueObject.enqueueIn);
+            });
+
             it('re-enqueue if there is the same job waiting but not the same buildId', async () => {
                 mockRedis.lrange.resolves(['2']);
                 mockRedis.llen.resolves(1);
