@@ -17,6 +17,7 @@ describe('Plugin Test', () => {
     const mockQueue = 'queuename';
     const runningJobsPrefix = 'mockRunningJobsPrefix_';
     const waitingJobsPrefix = 'mockRunningJobsPrefix_';
+    const deleteKey = `deleted_${jobId}_${buildId}`;
     const key = `${runningJobsPrefix}${jobId}`;
     let blockedByKeys;
     let mockWorker;
@@ -45,6 +46,7 @@ describe('Plugin Test', () => {
         mockRedis = {
             mget: sinon.stub().resolves([null, null]),
             set: sinon.stub().resolves(),
+            get: sinon.stub().resolves(null),
             expire: sinon.stub().resolves(),
             llen: sinon.stub().resolves(0),
             lpop: sinon.stub().resolves(),
@@ -111,6 +113,34 @@ describe('Plugin Test', () => {
                 assert.calledWith(mockRedis.set, key, buildId);
                 assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
+            });
+
+            it('do not proceed if build was aborted', async () => {
+                mockRedis.get.withArgs(deleteKey).resolves('');
+                const result = await blockedBy.beforePerform();
+
+                assert.equal(result, false);
+                assert.notCalled(mockRedis.mget);
+                assert.notCalled(mockRedis.set);
+                assert.notCalled(mockRedis.expire);
+                assert.notCalled(mockRedis.rpush);
+                assert.notCalled(mockWorker.queueObject.enqueueIn);
+                assert.calledWith(mockRedis.lrem, `${waitingJobsPrefix}${jobId}`, 0, buildId);
+            });
+
+            it('do not proceed if build was aborted while running', async () => {
+                mockRedis.get.withArgs(deleteKey).resolves('');
+                mockRedis.get.withArgs(`${runningJobsPrefix}${jobId}`).resolves('3');
+                const result = await blockedBy.beforePerform();
+
+                assert.equal(result, false);
+                assert.notCalled(mockRedis.mget);
+                assert.notCalled(mockRedis.set);
+                assert.notCalled(mockRedis.expire);
+                assert.notCalled(mockRedis.rpush);
+                assert.notCalled(mockWorker.queueObject.enqueueIn);
+                assert.calledWith(mockRedis.lrem, `${waitingJobsPrefix}${jobId}`, 0, buildId);
+                assert.calledWith(mockRedis.del, `${runningJobsPrefix}${jobId}`);
             });
 
             it('do not block by self', async () => {
@@ -198,7 +228,7 @@ describe('Plugin Test', () => {
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.mget, blockedByKeys);
                 assert.calledWith(mockRedis.set, key, buildId);
-                assert.calledWith(mockRedis.lrem, `${waitingJobsPrefix}${jobId}`, 0, 3);
+                assert.calledWith(mockRedis.lrem, `${waitingJobsPrefix}${jobId}`, 0, buildId);
                 assert.calledWith(mockRedis.del, `${waitingJobsPrefix}${jobId}`);
                 assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
