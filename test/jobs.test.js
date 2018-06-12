@@ -161,6 +161,24 @@ describe('Jobs Unit Test', () => {
             })
         );
 
+        it('do not call executor stop if job has not started', () => {
+            const stopConfig = Object.assign({ started: false }, partialConfig);
+
+            mockExecutor.stop.resolves(null);
+            mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
+            mockRedisObj.hdel.resolves(1);
+            mockRedisObj.del.resolves(null);
+
+            return jobs.stop.perform(stopConfig).then((result) => {
+                assert.isNull(result);
+                assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
+                assert.calledWith(mockRedisObj.hdel, 'buildConfigs', fullConfig.buildId);
+                assert.calledWith(mockRedisObj.del, 'running_job_777');
+                assert.calledWith(mockRedisObj.lrem, 'waiting_job_777', 0, fullConfig.buildId);
+                assert.notCalled(mockExecutor.stop);
+            });
+        });
+
         it('stops a job', () => {
             mockExecutor.stop.resolves(null);
             mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
