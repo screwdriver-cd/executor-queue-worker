@@ -47,6 +47,7 @@ describe('Jobs Unit Test', () => {
             hget: sinon.stub(),
             hdel: sinon.stub(),
             del: sinon.stub(),
+            get: sinon.stub(),
             lrem: sinon.stub().resolves()
         };
 
@@ -168,12 +169,13 @@ describe('Jobs Unit Test', () => {
             mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
             mockRedisObj.hdel.resolves(1);
             mockRedisObj.del.resolves(null);
+            mockRedisObj.get.withArgs('running_job_777').resolves('1000');
 
             return jobs.stop.perform(stopConfig).then((result) => {
                 assert.isNull(result);
                 assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
                 assert.calledWith(mockRedisObj.hdel, 'buildConfigs', fullConfig.buildId);
-                assert.calledWith(mockRedisObj.del, 'running_job_777');
+                assert.notCalled(mockRedisObj.del);
                 assert.calledWith(mockRedisObj.lrem, 'waiting_job_777', 0, fullConfig.buildId);
                 assert.notCalled(mockExecutor.stop);
             });
@@ -184,6 +186,7 @@ describe('Jobs Unit Test', () => {
             mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
             mockRedisObj.hdel.resolves(1);
             mockRedisObj.del.resolves(null);
+            mockRedisObj.get.withArgs('running_job_777').resolves(fullConfig.buildId);
 
             return jobs.stop.perform(partialConfig).then((result) => {
                 assert.isNull(result);
