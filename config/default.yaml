@@ -86,3 +86,5 @@ plugins:
       reenqueueWaitTime: 1
       # job is blocking for maximum 120 mins = build timeout
       blockTimeout: 120
+      # job blocked by itself
+      blockedBySelf: true
