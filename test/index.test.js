@@ -116,39 +116,6 @@ describe('Index Test', () => {
     });
 
     describe('shutDownAll', () => {
-        // it('logs correct message when successfully update build failure status', (done) => {
-        //     requestMock.yieldsAsync(null, { statusCode: 200 });
-        //
-        //     supportFunction.updateBuildStatus(updateConfig, (err) => {
-        //         assert.calledWith(mockRedisObj.hget,
-        //             'mockQueuePrefix_buildConfigs', job.args[0].buildId);
-        //         assert.calledWith(requestMock, requestOptions);
-        //         assert.isNull(err);
-        //         assert.calledWith(winstonMock.error,
-        //         // eslint-disable-next-line max-len
-        //             `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`
-        //         );
-        //         done();
-        //     });
-        // });
-        //
-        // it('logs correct message when fail to update build failure status', (done) => {
-        //     const requestErr = new Error('failed to update');
-        //     const response = {};
-        //
-        //     requestMock.yieldsAsync(requestErr, response);
-        //
-        //     supportFunction.updateBuildStatus(updateConfig, (err) => {
-        //         assert.calledWith(requestMock, requestOptions);
-        //         assert.strictEqual(err.message, 'failed to update');
-        //         assert.calledWith(winstonMock.error,
-        //             // eslint-disable-next-line max-len
-        //             `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> ${failure} ${requestErr} ${response}`
-        //         );
-        //         done();
-        //     });
-        // });
-
         it('logs error and then end scheduler when it fails to end worker', async () => {
             const expectedErr = new Error('failed');
 
@@ -215,8 +182,16 @@ describe('Index Test', () => {
                 status: 'FAILURE',
                 statusMessage: 'Build failed to start due to infrastructure error'
             };
+            const err = new Error('failed');
 
+            helperMock.updateBuildStatus.yieldsAsync(err, null);
             assert.calledWith(helperMock.updateBuildStatus, updateConfig);
+            assert.calledWith(winstonMock.error,
+                ` worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)}
+                >> successfully update build status: ${failure}`);
+            // assert.calledWith(winstonMock.error,
+            //     `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)}
+            //     >> ${failure} ${err} ${response}`);
 
             testWorker.emit('error', workerId, queue, job, error);
             assert.calledWith(winstonMock.error,

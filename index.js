@@ -71,6 +71,7 @@ async function boot() {
             status: 'FAILURE',
             statusMessage: 'Build failed to start due to infrastructure error'
         }, (err, response) => {
+            console.log(err, response);
             if (!err) {
                 winston.error(`worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`);
             } else {
