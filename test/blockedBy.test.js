@@ -24,6 +24,7 @@ describe('Plugin Test', () => {
     let mockRedis;
     let BlockedBy;
     let blockedBy;
+    let helperMock;
     let mockRedisConfig;
 
     before(() => {
@@ -64,9 +65,13 @@ describe('Plugin Test', () => {
             runningJobsPrefix,
             waitingJobsPrefix
         };
+        helperMock = {
+            updateBuildStatus: sinon.stub()
+        };
 
         mockery.registerMock('ioredis', mockRedis);
         mockery.registerMock('../config/redis', mockRedisConfig);
+        mockery.registerMock('./helper.js', helperMock);
 
         // eslint-disable-next-line global-require
         BlockedBy = require('../lib/BlockedBy.js').BlockedBy;
@@ -163,6 +168,7 @@ describe('Plugin Test', () => {
 
             it('re-enqueue if blocked', async () => {
                 mockRedis.get.withArgs(`${runningJobsPrefix}111`).resolves('123');
+                helperMock.updateBuildStatus.yieldsAsync(null, {});
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.get.firstCall, deleteKey);
                 assert.calledWith(mockRedis.get.secondCall, `${runningJobsPrefix}111`);
@@ -173,6 +179,12 @@ describe('Plugin Test', () => {
                     `${waitingJobsPrefix}${jobId}`, buildId);
                 assert.calledWith(mockWorker.queueObject.enqueueIn,
                     DEFAULT_ENQUEUETIME * 1000 * 60, mockQueue, mockFunc, mockArgs);
+                assert.calledWith(helperMock.updateBuildStatus, {
+                    buildId: 3,
+                    redisInstance: mockRedis,
+                    status: 'BLOCKED',
+                    statusMessage: 'Blocked by these running jobs: 111'
+                });
             });
 
             it('re-enqueue if blocked and not push to list if duplicate', async () => {
@@ -221,6 +233,12 @@ describe('Plugin Test', () => {
                     `${waitingJobsPrefix}${jobId}`, buildId);
                 assert.calledWith(mockWorker.queueObject.enqueueIn,
                     DEFAULT_ENQUEUETIME * 1000 * 60, mockQueue, mockFunc, mockArgs);
+                assert.calledWith(helperMock.updateBuildStatus, {
+                    buildId: 3,
+                    redisInstance: mockRedis,
+                    status: 'BLOCKED',
+                    statusMessage: `Blocked by these running jobs: ${jobId}` // blocked by itself
+                });
             });
 
             it('proceeds if there is the same job waiting with same buildId', async () => {
