@@ -20,16 +20,6 @@ describe('Index Test', () => {
     const job = { args: [{ buildId: 1 }] };
     const queue = 'testbuilds';
     const failure = 'failed';
-    // const requestOptions = {
-    //     auth: { bearer: 'fake' },
-    //     json: true,
-    //     method: 'PUT',
-    //     payload: {
-    //         status: 'FAILURE',
-    //         statusMessage: 'Build failed to start due to infrastructure error'
-    //     },
-    //     uri: `foo.bar/v4/builds/${job.args[0].buildId}`
-    // };
 
     let mockJobs;
     let MultiWorker;
@@ -174,25 +164,6 @@ describe('Index Test', () => {
             assert.calledWith(winstonMock.info,
                 `worker[${workerId}] ${job} success ${queue} ${JSON.stringify(job)} >> ${result}`);
 
-            // Mock updateBuildStatus to assert params pass in for the function
-            testWorker.emit('failure', workerId, queue, job, failure);
-            const updateConfig = {
-                buildId: 1,
-                redisInstance: mockRedisObj,
-                status: 'FAILURE',
-                statusMessage: 'Build failed to start due to infrastructure error'
-            };
-            const err = new Error('failed');
-
-            helperMock.updateBuildStatus.yieldsAsync(err, null);
-            assert.calledWith(helperMock.updateBuildStatus, updateConfig);
-            assert.calledWith(winstonMock.error,
-                ` worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)}
-                >> successfully update build status: ${failure}`);
-            // assert.calledWith(winstonMock.error,
-            //     `worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)}
-            //     >> ${failure} ${err} ${response}`);
-
             testWorker.emit('error', workerId, queue, job, error);
             assert.calledWith(winstonMock.error,
                 `worker[${workerId}] error ${queue} ${JSON.stringify(job)} >> ${error}`);
@@ -206,6 +177,43 @@ describe('Index Test', () => {
             testWorker.emit('multiWorkerAction', verb, delay);
             assert.calledWith(winstonMock.info,
                 `*** checked for worker status: ${verb} (event loop delay: ${delay}ms)`);
+        });
+
+        /* Failure case is special because it needs to wait for the updateBuildStatus to finish then do worker logging.
+         * We cannot guarantee the logs are executed sequentally because of event emitter.
+         * Therefore, need to add a sleep after emit the event and assert afterward.
+         */
+        it('test worker failure', async () => {
+            const updateConfig = {
+                buildId: 1,
+                redisInstance: mockRedisObj,
+                status: 'FAILURE',
+                statusMessage: 'Build failed to start due to infrastructure error'
+            };
+            const sleep = async ms => new Promise(resolve => setTimeout(resolve, ms));
+
+            // When updateBuildStatus succeeds
+            let errMsg = `worker[${workerId}] ${JSON.stringify(job)} failure ${queue} ` +
+            `${JSON.stringify(job)} >> successfully update build status: ${failure}`;
+
+            helperMock.updateBuildStatus.yieldsAsync(null, {});
+            testWorker.emit('failure', workerId, queue, job, failure);
+            await sleep(100);
+            assert.calledWith(helperMock.updateBuildStatus, updateConfig);
+            assert.calledWith(winstonMock.error, errMsg);
+
+            // When updateBuildStatus fails
+            const updateStatusError = new Error('failed');
+            const response = { statusCode: 500 };
+
+            errMsg = `worker[${workerId}] ${job} failure ${queue} ` +
+            `${JSON.stringify(job)} >> ${failure} ${updateStatusError} ${JSON.stringify(response)}`;
+
+            helperMock.updateBuildStatus.yieldsAsync(updateStatusError, { statusCode: 500 });
+            testWorker.emit('failure', workerId, queue, job, failure);
+            await sleep(100);
+            assert.calledWith(helperMock.updateBuildStatus, updateConfig);
+            assert.calledWith(winstonMock.error, errMsg);
         });
 
         it('logs the correct message for scheduler', () => {
