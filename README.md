@@ -11,6 +11,10 @@ A Resque Worker implementation that consumes jobs in a Resque queue.
 npm install screwdriver-queue-worker
 ```
 
+## Configuration
+
+Queue worker already [defaults most configuration](config/default.yaml), but you can override defaults using a `local.yaml` or environment variables using `custom-environment-variables.yaml`.
+
 ### Methods
 
 #### Start

@@ -231,7 +231,6 @@ describe('Plugin Test', () => {
                 async () => {
                     mockRedis.lrange.resolves(['2']);
                     mockRedis.llen.resolves(1);
-                    mockRedis.get.withArgs(runningKey).resolves('999');
                     await blockedBy.beforePerform();
                     assert.equal(mockRedis.get.getCall(0).args[0], deleteKey);
                     assert.equal(mockRedis.get.getCall(1).args[0], runningKey);
@@ -247,7 +246,7 @@ describe('Plugin Test', () => {
                         buildId: 3,
                         redisInstance: mockRedis,
                         status: 'BLOCKED',
-                        statusMessage: 'Blocked by these running build(s): 999' // blocked by itself
+                        statusMessage: 'Blocked by these running build(s): 2' // blocked by itself
                     });
                 });
 
