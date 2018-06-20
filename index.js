@@ -2,52 +2,12 @@
 
 const NodeResque = require('node-resque');
 const jobs = require('./lib/jobs');
+const helper = require('./lib/helper');
 const Redis = require('ioredis');
-const request = require('request');
 const winston = require('winston');
 const { connectionDetails, queuePrefix } = require('./config/redis');
-const redis = new Redis(connectionDetails.port, connectionDetails.host, connectionDetails.options);
-
-/**
- * Update build status to FAILURE
- * @method updateBuildStatus
- * @param  {Object}          updateConfig              build config of the job
- * @param  {string}          updateConfig.failure      failure message
- * @param  {Object}          updateConfig.job          job info
- * @param  {Object}          updateConfig.queue        queue of the job
- * @param  {integer}         updateConfig.workerId     id of the workerId
- * @param  {Function}        [callback]                Callback function
- * @return {Object}          err                       Callback with err object
- */
-function updateBuildStatus(updateConfig, callback) {
-    const { failure, job, queue, workerId } = updateConfig;
-    const { buildId } = updateConfig.job.args[0];
-
-    return redis.hget(`${queuePrefix}buildConfigs`, buildId)
-        .then(JSON.parse)
-        .then(fullBuildConfig => request({
-            json: true,
-            method: 'PUT',
-            uri: `${fullBuildConfig.apiUri}/v4/builds/${buildId}`,
-            payload: {
-                status: 'FAILURE',
-                statusMessage: 'Build failed to start due to infrastructure error'
-            },
-            auth: {
-                bearer: fullBuildConfig.token
-            }
-        }, (err, response) => {
-            if (!err && response.statusCode === 200) {
-                // eslint-disable-next-line max-len
-                winston.error(`worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`);
-                callback(null);
-            } else {
-                // eslint-disable-next-line max-len
-                winston.error(`worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> ${failure} ${err} ${response}`);
-                callback(err);
-            }
-        }));
-}
+const redis = new Redis(
+    connectionDetails.port, connectionDetails.host, connectionDetails.options);
 
 /**
  * Shutdown both worker and scheduler and then exit the process
@@ -71,7 +31,6 @@ async function shutDownAll(worker, scheduler) {
     }
 }
 
-const supportFunction = { updateBuildStatus, shutDownAll };
 const multiWorker = new NodeResque.MultiWorker({
     connection: connectionDetails,
     queues: [`${queuePrefix}builds`],
@@ -106,7 +65,18 @@ async function boot() {
     multiWorker.on('success', (workerId, queue, job, result) =>
         winston.info(`worker[${workerId}] ${job} success ${queue} ${JSON.stringify(job)} >> ${result}`));
     multiWorker.on('failure', (workerId, queue, job, failure) =>
-        supportFunction.updateBuildStatus({ workerId, queue, job, failure }, () => {}));
+        helper.updateBuildStatus({
+            redisInstance: redis,
+            buildId: job.args[0].buildId,
+            status: 'FAILURE',
+            statusMessage: 'Build failed to start due to infrastructure error'
+        }, (err, response) => {
+            if (!err) {
+                winston.error(`worker[${workerId}] ${JSON.stringify(job)} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`);
+            } else {
+                winston.error(`worker[${workerId}] ${job} failure ${queue} ${JSON.stringify(job)} >> ${failure} ${err} ${JSON.stringify(response)}`);
+            }
+        }));
     multiWorker.on('error', (workerId, queue, job, error) =>
         winston.error(`worker[${workerId}] error ${queue} ${JSON.stringify(job)} >> ${error}`));
     multiWorker.on('pause', workerId =>
@@ -140,7 +110,7 @@ async function boot() {
     scheduler.start();
 
     // Shut down workers before exit the process
-    process.on('SIGTERM', async () => supportFunction.shutDownAll(multiWorker, scheduler));
+    process.on('SIGTERM', async () => shutDownAll(multiWorker, scheduler));
 }
 
 boot();
@@ -149,5 +119,5 @@ module.exports = {
     jobs,
     multiWorker,
     scheduler,
-    supportFunction
+    shutDownAll
 };
