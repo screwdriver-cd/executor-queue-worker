@@ -14,7 +14,7 @@ describe('Helper Test', () => {
         auth: { bearer: 'fake' },
         json: true,
         method: 'PUT',
-        payload: {
+        body: {
             status,
             statusMessage
         },
