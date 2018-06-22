@@ -102,6 +102,15 @@ describe('Plugin Test', () => {
                 mockRedis.get.withArgs(`${runningJobsPrefix}222`).resolves(null);
                 mockRedis.get.withArgs(runningKey).resolves(null);
             });
+
+            it('proceeds if this is a retry build', async () => {
+                mockRedis.get.withArgs(runningKey).resolves(`${buildId}`);
+                mockRedis.lrange.resolves([]);
+                const proceed = await blockedBy.beforePerform();
+
+                assert.isTrue(proceed);
+            });
+
             it('proceeds if not blocked', async () => {
                 mockRedis.lrange.resolves([]);
                 await blockedBy.beforePerform();
@@ -144,7 +153,7 @@ describe('Plugin Test', () => {
 
             it('do not proceed if build was aborted while running', async () => {
                 mockRedis.get.withArgs(deleteKey).resolves('');
-                mockRedis.get.withArgs(`${runningJobsPrefix}${jobId}`).resolves('3');
+                mockRedis.get.withArgs(`${runningJobsPrefix}${jobId}`).resolves('4');
                 const result = await blockedBy.beforePerform();
 
                 assert.equal(result, false);
@@ -155,7 +164,7 @@ describe('Plugin Test', () => {
                 assert.notCalled(mockRedis.rpush);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
                 assert.calledWith(mockRedis.lrem, `${waitingJobsPrefix}${jobId}`, 0, buildId);
-                assert.calledWith(mockRedis.del, `${runningJobsPrefix}${jobId}`);
+                assert.calledWith(mockRedis.del, deleteKey);
             });
 
             it('do not block by self', async () => {
