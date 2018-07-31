@@ -62,6 +62,10 @@ executor:
 #             port: 8080
 #             username: screwdriver
 #             password: "WOW-AN-EVEN-MORE-INSECURE-PASSWORD!!!!"
+#             # Default build timeout (in minutes)
+#             buildTimeout: 90
+#             # Default max build timeout (in minutes)
+#             maxBuildTimeout: 120
 
 ecosystem:
     # Externally routable URL for the User Interface
