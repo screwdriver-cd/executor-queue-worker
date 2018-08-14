@@ -41,6 +41,13 @@ executor:
             preferredNodeSelectors:
               __name: K8S_PREFERRED_NODE_SELECTORS
               __format: json
+            # k8s annotations
+            # Value is Object of format { key: 'value' } See
+            # https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations
+            # Eg: {"io.kubernetes.cri.untrusted-workload": "true"}
+            annotations:
+              __name: K8S_ANNOTATIONS
+              __format: json
         # Launcher container tag to use
         launchVersion: LAUNCH_VERSION
         # Prefix to the pod
