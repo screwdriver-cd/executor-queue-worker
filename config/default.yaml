@@ -25,6 +25,7 @@ executor:
             # k8s node selectors for approprate pod scheduling
             nodeSelectors: {}
             preferredNodeSelectors: {}
+            annotations: {}
         # Container tags to use
         launchVersion: stable
     k8s-vm:
