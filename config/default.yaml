@@ -28,6 +28,11 @@ executor:
             annotations: {}
         # Container tags to use
         launchVersion: stable
+        # Circuit breaker config
+        fusebox:
+            breaker:
+                # in milliseconds
+                timeout: 10000
     k8s-vm:
       options:
         # Configuration of Docker
