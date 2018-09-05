@@ -55,6 +55,11 @@ executor:
             preferredNodeSelectors: {}
         # Launcher container tag to use
         launchVersion: stable
+        # Circuit breaker config
+        fusebox:
+            breaker:
+                # in milliseconds
+                timeout: 10000
 #     jenkins:
 #       options:
 #         # Configuration of Jenkins

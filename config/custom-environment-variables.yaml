@@ -95,6 +95,11 @@ executor:
         launchVersion: LAUNCH_VERSION
         # Prefix to the container
         prefix: EXECUTOR_PREFIX
+        # Circuit breaker config
+        fusebox:
+            breaker:
+                # in milliseconds
+                timeout: CIRCUIT_TIMEOUT
     jenkins:
       options:
         jenkins:
