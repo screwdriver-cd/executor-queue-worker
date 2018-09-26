@@ -19,11 +19,13 @@ executor:
                     micro: K8S_CPU_MICRO
                     low: K8S_CPU_LOW
                     high: K8S_CPU_HIGH
+                    turbo: K8S_CPU_TURBO
                 # Memory in GB
                 memory:
                     micro: K8S_MEMORY_MICRO
                     low: K8S_MEMORY_LOW
                     high: K8S_MEMORY_HIGH
+                    turbo: K8S_MEMORY_TURBO
             # Default build timeout for all builds in this cluster
             buildTimeout: K8S_BUILD_TIMEOUT
             # Default max build timeout
@@ -52,6 +54,11 @@ executor:
         launchVersion: LAUNCH_VERSION
         # Prefix to the pod
         prefix: EXECUTOR_PREFIX
+        # Circuit breaker config
+        fusebox:
+            breaker:
+                # in milliseconds
+                timeout: CIRCUIT_TIMEOUT
     k8s-vm:
       options:
         # Configuration of Docker
@@ -69,11 +76,13 @@ executor:
                     micro: K8S_CPU_MICRO
                     low: K8S_CPU_LOW
                     high: K8S_CPU_HIGH
+                    turbo: K8S_CPU_TURBO
                 # Memory in GB
                 memory:
                     micro: K8S_MEMORY_MICRO
                     low: K8S_MEMORY_LOW
                     high: K8S_MEMORY_HIGH
+                    turbo: K8S_MEMORY_TURBO
                 disk:
                   high: K8S_DISK_LABEL
             # Default build timeout for all builds in this cluster
