@@ -50,6 +50,8 @@ executor:
             annotations:
               __name: K8S_ANNOTATIONS
               __format: json
+        # Launcher image to use
+        launchImage: LAUNCH_IMAGE
         # Launcher container tag to use
         launchVersion: LAUNCH_VERSION
         # Prefix to the pod
@@ -102,6 +104,8 @@ executor:
             preferredNodeSelectors:
               __name: K8S_VM_PREFERRED_NODE_SELECTORS
               __format: json
+        # Launcher image to use
+        launchImage: LAUNCH_IMAGE
         # Launcher container tag to use
         launchVersion: LAUNCH_VERSION
         # Prefix to the container
