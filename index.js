@@ -61,7 +61,7 @@ async function boot() {
     multiWorker.on('job', (workerId, queue, job) =>
         winston.info(`worker[${workerId}] working job ${queue} ${JSON.stringify(job)}`));
     multiWorker.on('reEnqueue', (workerId, queue, job, plugin) =>
-        winston.info(`worker[${workerId}] reEnqueue job (${plugin}) ${queue} ${JSON.stringify(job)}`));
+        winston.info(`worker[${workerId}] reEnqueue job (${JSON.stringify(plugin)}) ${queue} ${JSON.stringify(job)}`));
     multiWorker.on('success', (workerId, queue, job, result) =>
         winston.info(`worker[${workerId}] ${job} success ${queue} ${JSON.stringify(job)} >> ${result}`));
     multiWorker.on('failure', (workerId, queue, job, failure) =>
