@@ -95,7 +95,7 @@ describe('Jobs Unit Test', () => {
                 pluginOptions: {
                     Retry: {
                         retryLimit: 3,
-                        retryDelay: 5
+                        retryDelay: 5000
                     },
                     BlockedBy: {
                         reenqueueWaitTime: 1,
@@ -155,7 +155,7 @@ describe('Jobs Unit Test', () => {
                 pluginOptions: {
                     Retry: {
                         retryLimit: 3,
-                        retryDelay: 5
+                        retryDelay: 5000
                     }
                 },
                 perform: jobs.stop.perform
