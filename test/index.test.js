@@ -158,6 +158,7 @@ describe('Index Test', () => {
 
             testWorker.emit('reEnqueue', workerId, queue, job, plugin);
             assert.calledWith(winstonMock.info,
+                // eslint-disable-next-line max-len
                 `worker[${workerId}] reEnqueue job (${JSON.stringify(plugin)}) ${queue} ${JSON.stringify(job)}`);
 
             testWorker.emit('success', workerId, queue, job, result);
