@@ -19,7 +19,7 @@ describe('Index Test', () => {
     const workerId = 1;
     const job = { args: [{ buildId: 1 }] };
     const queue = 'testbuilds';
-    const failure = 'failed';
+    const failure = 'some failed message';
 
     let mockJobs;
     let MultiWorker;
@@ -189,7 +189,7 @@ describe('Index Test', () => {
                 buildId: 1,
                 redisInstance: mockRedisObj,
                 status: 'FAILURE',
-                statusMessage: 'Build failed to start due to infrastructure error'
+                statusMessage: 'some failed message'
             };
             const sleep = async ms => new Promise(resolve => setTimeout(resolve, ms));
 
