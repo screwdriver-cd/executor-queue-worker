@@ -183,7 +183,7 @@ describe('Index Test', () => {
          * We cannot guarantee the logs are executed sequentally because of event emitter.
          * Therefore, need to add a sleep after emit the event and assert afterward.
          */
-        it('test worker failure by some reason', async () => {
+        it('tests worker failure by some reason', async () => {
             const updateConfig = {
                 buildId: 1,
                 redisInstance: mockRedisObj,
