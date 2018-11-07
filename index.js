@@ -69,7 +69,7 @@ async function boot() {
             redisInstance: redis,
             buildId: job.args[0].buildId,
             status: 'FAILURE',
-            statusMessage: 'Build failed to start due to infrastructure error'
+            statusMessage: `${failure}`
         }, (err, response) => {
             if (!err) {
                 winston.error(`worker[${workerId}] ${JSON.stringify(job)} failure ${queue} ${JSON.stringify(job)} >> successfully update build status: ${failure}`);

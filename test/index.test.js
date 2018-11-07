@@ -19,7 +19,6 @@ describe('Index Test', () => {
     const workerId = 1;
     const job = { args: [{ buildId: 1 }] };
     const queue = 'testbuilds';
-    const failure = 'failed';
 
     let mockJobs;
     let MultiWorker;
@@ -184,14 +183,15 @@ describe('Index Test', () => {
          * We cannot guarantee the logs are executed sequentally because of event emitter.
          * Therefore, need to add a sleep after emit the event and assert afterward.
          */
-        it('test worker failure', async () => {
+        it('tests worker failure by some reason', async () => {
             const updateConfig = {
                 buildId: 1,
                 redisInstance: mockRedisObj,
                 status: 'FAILURE',
-                statusMessage: 'Build failed to start due to infrastructure error'
+                statusMessage: 'failure'
             };
             const sleep = async ms => new Promise(resolve => setTimeout(resolve, ms));
+            const failure = 'failure';
 
             // When updateBuildStatus succeeds
             let errMsg = `worker[${workerId}] ${JSON.stringify(job)} failure ${queue} ` +
