@@ -111,3 +111,23 @@ plugins:
       blockTimeout: 120
       # job blocked by itself
       blockedBySelf: true
+
+# Run queue-worker as a scheduler, instead of calling executor to start/stop builds, push it to rabbitmq
+scheduler:
+    # Enabled schduler mode or not
+    enabled: false
+    # To enable schduler mode, you need rabbitmq server and consumer
+    rabbitmq:
+        # Host of rabbitmq cluster
+        host: 127.0.0.1
+        # Port of rabbitmq cluster
+        port: 5672
+        # User to push to rabbitmq
+        username: sd-buidbot
+        # Password to connect to rabbitmq cluster
+        password: fakepassword
+        # Protocal for rabbitmq server, use amqps for ssl
+        protocal: amqp
+        # Exchange for rabbitmq
+        exchange: build
+

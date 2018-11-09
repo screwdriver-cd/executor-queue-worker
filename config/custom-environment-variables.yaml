@@ -177,3 +177,22 @@ plugins:
         blockTimeout: PLUGIN_BLOCKEDBY_BLOCK_TIMEOUT
         # job block by itself
         blockedBySelf: PLUGIN_BLOCKEDBY_BLOCKED_BY_SELF
+
+# Run queue-worker as a scheduler, instead of calling executor to start/stop builds, push it to rabbitmq
+scheduler:
+    # Enabled schduler mode or not
+    enabled: SCHEDULER_ENABLED
+    # To enable schduler mode, you need rabbitmq server and consumer
+    rabbitmq:
+        # Host of rabbitmq cluster
+        host: RABBITMQ_HOST
+        # Port of rabbitmq cluster
+        port: RABBITMQ_PORT
+        # User to push to rabbitmq
+        username: RABBITMQ_USERNAME
+        # Password to connect to rabbitmq cluster
+        password: RABBITMQ_PASSWORD
+        # Protocal for rabbitmq server, use amqps for ssl
+        protocal: RABBITMQ_PROTOCAL
+        # Exchange for rabbitmq
+        exchange: RABBITMQ_EXCHANGE
