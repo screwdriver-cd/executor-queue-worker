@@ -194,5 +194,7 @@ scheduler:
         password: RABBITMQ_PASSWORD
         # Protocal for rabbitmq server, use amqps for ssl
         protocal: RABBITMQ_PROTOCAL
-        # Exchange for rabbitmq
+        # Exchange / router name for rabbitmq
         exchange: RABBITMQ_EXCHANGE
+        # Exchange type for rabbitmq
+        exchangeType: RABBITMQ_EXCHANGE_TYPE

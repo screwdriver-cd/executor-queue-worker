@@ -128,6 +128,8 @@ scheduler:
         password: fakepassword
         # Protocal for rabbitmq server, use amqps for ssl
         protocal: amqp
-        # Exchange for rabbitmq
+        # Exchange / router name for rabbitmq
         exchange: build
+        # Exchange type for rabbitmq
+        exchangeType: topic
 
