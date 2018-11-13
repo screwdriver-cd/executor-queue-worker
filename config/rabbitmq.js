@@ -10,7 +10,7 @@ const schedulerMode = config.get('scheduler').enabled;
 /**
  * get configurations for rabbitmq
  * @method getConfig
- * @return {Object}  [description]
+ * @return {Object}
  */
 function getConfig() {
     return {
