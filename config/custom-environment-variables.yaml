@@ -192,8 +192,8 @@ scheduler:
         username: RABBITMQ_USERNAME
         # Password to connect to rabbitmq cluster
         password: RABBITMQ_PASSWORD
-        # Protocal for rabbitmq server, use amqps for ssl
-        protocal: RABBITMQ_PROTOCAL
+        # Protocol for rabbitmq server, use amqps for ssl
+        protocol: RABBITMQ_PROTOCOL
         # Exchange / router name for rabbitmq
         exchange: RABBITMQ_EXCHANGE
         # Exchange type for rabbitmq

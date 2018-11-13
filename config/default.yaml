@@ -126,8 +126,8 @@ scheduler:
         username: sd-buidbot
         # Password to connect to rabbitmq cluster
         password: fakepassword
-        # Protocal for rabbitmq server, use amqps for ssl
-        protocal: amqp
+        # Protocol for rabbitmq server, use amqps for ssl
+        protocol: amqp
         # Exchange / router name for rabbitmq
         exchange: build
         # Exchange type for rabbitmq

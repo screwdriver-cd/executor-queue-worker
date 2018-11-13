@@ -8,7 +8,7 @@ sinon.assert.expose(assert, { prefix: '' });
 
 describe('rabbitmq config test', () => {
     const rabbitmq = {
-        protocal: 'amqp',
+        protocol: 'amqp',
         username: 'foo',
         password: 'bar',
         host: 'localhost',

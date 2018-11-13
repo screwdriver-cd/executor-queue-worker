@@ -3,8 +3,8 @@
 const config = require('config');
 
 const rabbitmqConfig = config.get('scheduler').rabbitmq;
-const { protocal, username, password, host, port, exchange, exchangeType } = rabbitmqConfig;
-const amqpURI = `${protocal}://${username}:${password}@${host}:${port}`;
+const { protocol, username, password, host, port, exchange, exchangeType } = rabbitmqConfig;
+const amqpURI = `${protocol}://${username}:${password}@${host}:${port}`;
 const schedulerMode = config.get('scheduler').enabled;
 
 /**
