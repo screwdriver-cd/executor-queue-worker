@@ -29,6 +29,12 @@ describe('Jobs Unit Test', () => {
     let mockRedis;
     let mockRedisObj;
     let mockBlockedBy;
+    let mockFilter;
+    let mockRabbitmqConfig;
+    let mockRabbitmqConfigObj;
+    let mockAmqplibObj;
+    let mockRabbitmqConnection;
+    let mockRabbitmqCh;
 
     before(() => {
         mockery.enable({
@@ -51,16 +57,51 @@ describe('Jobs Unit Test', () => {
             lrem: sinon.stub().resolves()
         };
 
+        mockRabbitmqCh = {
+            publish: sinon.stub().resolves(null),
+            assertExchange: sinon.stub().resolves(null),
+            close: sinon.stub().resolves(null)
+        };
+
+        mockRabbitmqConnection = {
+            createChannel: sinon.stub().resolves(mockRabbitmqCh)
+        };
+
+        mockAmqplibObj = {
+            connect: sinon.stub().resolves(mockRabbitmqConnection)
+        };
+
+        mockRabbitmqConfigObj = {
+            schedulerMode: false,
+            amqpURI: 'amqp://localhost:5672',
+            exchange: 'build',
+            exchangeType: 'topic'
+        };
+
+        mockRabbitmqConfig = {
+            getConfig: sinon.stub().returns(mockRabbitmqConfigObj)
+        };
+
         mockExecutorRouter = function () { return mockExecutor; };
         mockery.registerMock('screwdriver-executor-router', mockExecutorRouter);
 
+        // mockAmqplib = sinon.stub().returns(mockAmqplibObj);
+        mockery.registerMock('amqplib', mockAmqplibObj);
+
         mockRedis = sinon.stub().returns(mockRedisObj);
         mockery.registerMock('ioredis', mockRedis);
+
+        mockery.registerMock('../config/rabbitmq', mockRabbitmqConfig);
 
         mockBlockedBy = {
             BlockedBy: sinon.stub().returns()
         };
         mockery.registerMock('./BlockedBy', mockBlockedBy);
+
+        mockFilter = {
+            Filter: sinon.stub().returns()
+        };
+        mockery.registerMock('./Filter', mockFilter);
 
         // eslint-disable-next-line global-require
         jobs = require('../lib/jobs');
@@ -91,7 +132,7 @@ describe('Jobs Unit Test', () => {
     describe('start', () => {
         it('constructs start job correctly', () =>
             assert.deepEqual(jobs.start, {
-                plugins: ['Retry', mockBlockedBy.BlockedBy],
+                plugins: [mockFilter.Filter, 'Retry', mockBlockedBy.BlockedBy],
                 pluginOptions: {
                     Retry: {
                         retryLimit: 3,
@@ -117,6 +158,32 @@ describe('Jobs Unit Test', () => {
 
                     assert.calledWith(mockExecutor.start, fullConfig);
                     assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
+                });
+        });
+
+        it('enqueus a job with scheduler mode', () => {
+            mockRabbitmqConfigObj.schedulerMode = true;
+            mockRabbitmqConfig.getConfig.returns(mockRabbitmqConfigObj);
+            fullConfig.buildClusterName = 'sd';
+            mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
+            const { amqpURI, exchange, exchangeType } = mockRabbitmqConfigObj;
+
+            return jobs.start.perform(partialConfig)
+                .then((result) => {
+                    delete fullConfig.buildClusterName;
+                    const msg = Buffer.from(JSON.stringify({
+                        job: 'start',
+                        buildConfig: fullConfig
+                    }));
+
+                    assert.isNull(result);
+                    assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
+                    assert.calledWith(mockAmqplibObj.connect, amqpURI);
+                    assert.calledOnce(mockRabbitmqConnection.createChannel);
+                    assert.calledWith(mockRabbitmqCh.assertExchange, exchange, exchangeType);
+                    assert.calledWith(mockRabbitmqCh.publish, exchange, 'sd', msg);
+                    assert.calledOnce(mockRabbitmqCh.close);
+                    assert.notCalled(mockExecutor.start);
                 });
         });
 
@@ -151,7 +218,7 @@ describe('Jobs Unit Test', () => {
     describe('stop', () => {
         it('constructs stop job correctly', () =>
             assert.deepEqual(jobs.stop, {
-                plugins: ['Retry'],
+                plugins: [mockFilter.Filter, 'Retry'],
                 pluginOptions: {
                     Retry: {
                         retryLimit: 3,

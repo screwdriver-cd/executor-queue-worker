@@ -5,9 +5,20 @@ const config = require('config');
 const rabbitmqConfig = config.get('scheduler').rabbitmq;
 const { protocal, username, password, host, port, exchange, exchangeType } = rabbitmqConfig;
 const amqpURI = `${protocal}://${username}:${password}@${host}:${port}`;
+const schedulerMode = config.get('scheduler').enabled;
 
-module.exports = {
-    amqpURI,
-    exchange,
-    exchangeType
-};
+/**
+ * get configurations for rabbitmq
+ * @method getConfig
+ * @return {Object}  [description]
+ */
+function getConfig() {
+    return {
+        schedulerMode,
+        amqpURI,
+        exchange,
+        exchangeType
+    };
+}
+
+module.exports = { getConfig };
