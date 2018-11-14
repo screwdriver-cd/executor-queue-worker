@@ -14,7 +14,8 @@ describe('rabbitmq config test', () => {
         host: 'localhost',
         port: 5672,
         exchange: 'build',
-        exchangeType: 'topic'
+        exchangeType: 'topic',
+        vhost: '/screwdriver'
     };
     let configMock;
     let rabbitmqConfig;
@@ -43,7 +44,7 @@ describe('rabbitmq config test', () => {
     it('populates the correct values', () => {
         assert.deepEqual(rabbitmqConfig.getConfig(), {
             schedulerMode: false,
-            amqpURI: 'amqp://foo:bar@localhost:5672',
+            amqpURI: 'amqp://foo:bar@localhost:5672/screwdriver',
             exchange: rabbitmq.exchange,
             exchangeType: rabbitmq.exchangeType
         });

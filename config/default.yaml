@@ -132,4 +132,6 @@ scheduler:
         exchange: build
         # Exchange type for rabbitmq
         exchangeType: topic
+        # Virtual host to connect to
+        vhost: /screwdriver
 
