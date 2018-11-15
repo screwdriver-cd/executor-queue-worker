@@ -29,6 +29,12 @@ describe('Jobs Unit Test', () => {
     let mockRedis;
     let mockRedisObj;
     let mockBlockedBy;
+    let mockFilter;
+    let mockRabbitmqConfig;
+    let mockRabbitmqConfigObj;
+    let mockAmqplib;
+    let mockRabbitmqConnection;
+    let mockRabbitmqCh;
 
     before(() => {
         mockery.enable({
@@ -51,16 +57,50 @@ describe('Jobs Unit Test', () => {
             lrem: sinon.stub().resolves()
         };
 
+        mockRabbitmqCh = {
+            publish: sinon.stub().resolves(null),
+            assertExchange: sinon.stub().resolves(null),
+            close: sinon.stub().resolves(null)
+        };
+
+        mockRabbitmqConnection = {
+            createChannel: sinon.stub().resolves(mockRabbitmqCh)
+        };
+
+        mockAmqplib = {
+            connect: sinon.stub().resolves(mockRabbitmqConnection)
+        };
+
+        mockRabbitmqConfigObj = {
+            schedulerMode: false,
+            amqpURI: 'amqp://localhost:5672',
+            exchange: 'build',
+            exchangeType: 'topic'
+        };
+
+        mockRabbitmqConfig = {
+            getConfig: sinon.stub().returns(mockRabbitmqConfigObj)
+        };
+
         mockExecutorRouter = function () { return mockExecutor; };
         mockery.registerMock('screwdriver-executor-router', mockExecutorRouter);
 
+        mockery.registerMock('amqplib', mockAmqplib);
+
         mockRedis = sinon.stub().returns(mockRedisObj);
         mockery.registerMock('ioredis', mockRedis);
+
+        mockery.registerMock('../config/rabbitmq', mockRabbitmqConfig);
 
         mockBlockedBy = {
             BlockedBy: sinon.stub().returns()
         };
         mockery.registerMock('./BlockedBy', mockBlockedBy);
+
+        mockFilter = {
+            Filter: sinon.stub().returns()
+        };
+        mockery.registerMock('./Filter', mockFilter);
 
         // eslint-disable-next-line global-require
         jobs = require('../lib/jobs');
@@ -91,7 +131,7 @@ describe('Jobs Unit Test', () => {
     describe('start', () => {
         it('constructs start job correctly', () =>
             assert.deepEqual(jobs.start, {
-                plugins: ['Retry', mockBlockedBy.BlockedBy],
+                plugins: [mockFilter.Filter, 'Retry', mockBlockedBy.BlockedBy],
                 pluginOptions: {
                     Retry: {
                         retryLimit: 3,
@@ -118,6 +158,49 @@ describe('Jobs Unit Test', () => {
                     assert.calledWith(mockExecutor.start, fullConfig);
                     assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
                 });
+        });
+
+        it('enqueus a start job with scheduler mode', () => {
+            mockRabbitmqConfigObj.schedulerMode = true;
+            mockRabbitmqConfig.getConfig.returns(mockRabbitmqConfigObj);
+            fullConfig.buildClusterName = 'sd';
+            mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
+            const { amqpURI, exchange, exchangeType } = mockRabbitmqConfigObj;
+
+            return jobs.start.perform(partialConfig)
+                .then((result) => {
+                    delete fullConfig.buildClusterName;
+                    const msg = Buffer.from(JSON.stringify({
+                        job: 'start',
+                        buildConfig: fullConfig
+                    }));
+
+                    assert.isNull(result);
+                    assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
+                    assert.calledWith(mockAmqplib.connect, amqpURI);
+                    assert.calledOnce(mockRabbitmqConnection.createChannel);
+                    assert.calledWith(mockRabbitmqCh.assertExchange, exchange, exchangeType);
+                    assert.calledWith(mockRabbitmqCh.publish, exchange, 'sd', msg);
+                    assert.calledOnce(mockRabbitmqCh.close);
+                    assert.notCalled(mockExecutor.start);
+                });
+        });
+
+        it('close the channel when fail to publish the msg', () => {
+            const expectedError = new Error('failed to publish');
+
+            mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
+            mockRabbitmqConfigObj.schedulerMode = true;
+            mockRabbitmqConfig.getConfig.returns(mockRabbitmqConfigObj);
+            fullConfig.buildClusterName = 'sd';
+            mockRabbitmqCh.publish.rejects(expectedError);
+
+            return jobs.start.perform({}).then(() => {
+                assert.fail('Should not get here');
+            }, (err) => {
+                assert.calledOnce(mockRabbitmqCh.close);
+                assert.deepEqual(err, expectedError);
+            });
         });
 
         it('returns an error from executor', () => {
@@ -151,7 +234,7 @@ describe('Jobs Unit Test', () => {
     describe('stop', () => {
         it('constructs stop job correctly', () =>
             assert.deepEqual(jobs.stop, {
-                plugins: ['Retry'],
+                plugins: [mockFilter.Filter, 'Retry'],
                 pluginOptions: {
                     Retry: {
                         retryLimit: 3,
@@ -198,6 +281,42 @@ describe('Jobs Unit Test', () => {
                     annotations: fullConfig.annotations,
                     buildId: fullConfig.buildId
                 });
+            });
+        });
+
+        it('enqueus a stop job with scheduler mode', () => {
+            fullConfig.buildClusterName = 'sd';
+            mockExecutor.stop.resolves(null);
+            mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
+            mockRedisObj.hdel.resolves(1);
+            mockRedisObj.del.resolves(null);
+            mockRedisObj.get.withArgs('running_job_777').resolves(fullConfig.buildId);
+            mockRabbitmqConfigObj.schedulerMode = true;
+            mockRabbitmqConfig.getConfig.returns(mockRabbitmqConfigObj);
+            const { amqpURI, exchange, exchangeType } = mockRabbitmqConfigObj;
+
+            return jobs.stop.perform(partialConfig).then((result) => {
+                delete fullConfig.buildClusterName;
+                const msg = Buffer.from(JSON.stringify({
+                    job: 'stop',
+                    buildConfig: {
+                        buildId: fullConfig.buildId,
+                        annotations: fullConfig.annotations
+                    }
+                }));
+
+                assert.isNull(result);
+                assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
+                assert.calledWith(mockRedisObj.hdel, 'buildConfigs', fullConfig.buildId);
+                assert.calledWith(mockRedisObj.del, 'running_job_777');
+                assert.calledWith(mockRedisObj.lrem, 'waiting_job_777', 0, fullConfig.buildId);
+                assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
+                assert.calledWith(mockAmqplib.connect, amqpURI);
+                assert.calledOnce(mockRabbitmqConnection.createChannel);
+                assert.calledWith(mockRabbitmqCh.assertExchange, exchange, exchangeType);
+                assert.calledWith(mockRabbitmqCh.publish, exchange, 'sd', msg);
+                assert.calledOnce(mockRabbitmqCh.close);
+                assert.notCalled(mockExecutor.stop);
             });
         });
 

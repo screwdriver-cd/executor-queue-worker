@@ -1,0 +1,14 @@
+FROM node:8
+
+# Create our application directory
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+COPY package.json /usr/src/app/
+RUN npm install --production
+
+# Copy everything else
+COPY . /usr/src/app
+
+# Run the service
+CMD [ "npm", "start" ]
