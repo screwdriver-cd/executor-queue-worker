@@ -32,7 +32,7 @@ describe('Jobs Unit Test', () => {
     let mockFilter;
     let mockRabbitmqConfig;
     let mockRabbitmqConfigObj;
-    let mockAmqplib;
+    let mockAmqp;
     let mockRabbitmqConnection;
     let mockRabbitmqCh;
 
@@ -64,11 +64,12 @@ describe('Jobs Unit Test', () => {
         };
 
         mockRabbitmqConnection = {
-            createChannel: sinon.stub().resolves(mockRabbitmqCh)
+            on: sinon.stub(),
+            createChannel: sinon.stub().returns(mockRabbitmqCh)
         };
 
-        mockAmqplib = {
-            connect: sinon.stub().resolves(mockRabbitmqConnection)
+        mockAmqp = {
+            connect: sinon.stub().returns(mockRabbitmqConnection)
         };
 
         mockRabbitmqConfigObj = {
@@ -85,7 +86,7 @@ describe('Jobs Unit Test', () => {
         mockExecutorRouter = function () { return mockExecutor; };
         mockery.registerMock('screwdriver-executor-router', mockExecutorRouter);
 
-        mockery.registerMock('amqplib', mockAmqplib);
+        mockery.registerMock('amqp-connection-manager', mockAmqp);
 
         mockRedis = sinon.stub().returns(mockRedisObj);
         mockery.registerMock('ioredis', mockRedis);
@@ -165,22 +166,23 @@ describe('Jobs Unit Test', () => {
             mockRabbitmqConfig.getConfig.returns(mockRabbitmqConfigObj);
             fullConfig.buildClusterName = 'sd';
             mockRedisObj.hget.resolves(JSON.stringify(fullConfig));
-            const { amqpURI, exchange, exchangeType } = mockRabbitmqConfigObj;
+            const { amqpURI, exchange } = mockRabbitmqConfigObj;
 
             return jobs.start.perform(partialConfig)
                 .then((result) => {
                     delete fullConfig.buildClusterName;
-                    const msg = Buffer.from(JSON.stringify({
+                    const msg = {
                         job: 'start',
                         buildConfig: fullConfig
-                    }));
+                    };
 
                     assert.isNull(result);
                     assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
-                    assert.calledWith(mockAmqplib.connect, amqpURI);
+                    assert.calledWith(mockAmqp.connect, [amqpURI]);
                     assert.calledOnce(mockRabbitmqConnection.createChannel);
-                    assert.calledWith(mockRabbitmqCh.assertExchange, exchange, exchangeType);
-                    assert.calledWith(mockRabbitmqCh.publish, exchange, 'sd', msg);
+                    assert.calledWith(mockRabbitmqCh.publish, exchange, 'sd', msg, {
+                        contentType: 'application/json', persistent: true
+                    });
                     assert.calledOnce(mockRabbitmqCh.close);
                     assert.notCalled(mockExecutor.start);
                 });
@@ -293,17 +295,17 @@ describe('Jobs Unit Test', () => {
             mockRedisObj.get.withArgs('running_job_777').resolves(fullConfig.buildId);
             mockRabbitmqConfigObj.schedulerMode = true;
             mockRabbitmqConfig.getConfig.returns(mockRabbitmqConfigObj);
-            const { amqpURI, exchange, exchangeType } = mockRabbitmqConfigObj;
+            const { amqpURI, exchange } = mockRabbitmqConfigObj;
 
             return jobs.stop.perform(partialConfig).then((result) => {
                 delete fullConfig.buildClusterName;
-                const msg = Buffer.from(JSON.stringify({
+                const msg = {
                     job: 'stop',
                     buildConfig: {
                         buildId: fullConfig.buildId,
                         annotations: fullConfig.annotations
                     }
-                }));
+                };
 
                 assert.isNull(result);
                 assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
@@ -311,10 +313,12 @@ describe('Jobs Unit Test', () => {
                 assert.calledWith(mockRedisObj.del, 'running_job_777');
                 assert.calledWith(mockRedisObj.lrem, 'waiting_job_777', 0, fullConfig.buildId);
                 assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
-                assert.calledWith(mockAmqplib.connect, amqpURI);
+                assert.calledWith(mockAmqp.connect, [amqpURI]);
                 assert.calledOnce(mockRabbitmqConnection.createChannel);
-                assert.calledWith(mockRabbitmqCh.assertExchange, exchange, exchangeType);
-                assert.calledWith(mockRabbitmqCh.publish, exchange, 'sd', msg);
+                // assert.calledWith(mockRabbitmqCh.assertExchange, exchange, exchangeType);
+                assert.calledWith(mockRabbitmqCh.publish, exchange, 'sd', msg, {
+                    contentType: 'application/json', persistent: true
+                });
                 assert.calledOnce(mockRabbitmqCh.close);
                 assert.notCalled(mockExecutor.stop);
             });
