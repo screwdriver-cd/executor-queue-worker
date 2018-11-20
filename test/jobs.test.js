@@ -303,7 +303,8 @@ describe('Jobs Unit Test', () => {
                     job: 'stop',
                     buildConfig: {
                         buildId: fullConfig.buildId,
-                        annotations: fullConfig.annotations
+                        annotations: fullConfig.annotations,
+                        token: fullConfig.token
                     }
                 };
 
