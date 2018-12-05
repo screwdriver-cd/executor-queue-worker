@@ -46,7 +46,7 @@ jobs:
             DOCKER_REPO: screwdrivercd/queue-worker
             K8S_CONTAINER: screwdriver-redis-worker
             K8S_IMAGE: screwdrivercd/queue-worker
-            K8S_HOST: api.k8s.screwdriver.cd
+            K8S_HOST: api.ossd.k8s.screwdriver.cd
             K8S_DEPLOYMENT: redis-worker-beta
         secrets:
             # Talking to Kubernetes
@@ -65,7 +65,7 @@ jobs:
             DOCKER_REPO: screwdrivercd/queue-worker
             K8S_CONTAINER: screwdriver-redis-worker
             K8S_IMAGE: screwdrivercd/queue-worker
-            K8S_HOST: api.k8s.screwdriver.cd
+            K8S_HOST: api.ossd.k8s.screwdriver.cd
             K8S_DEPLOYMENT: redis-worker
         secrets:
             # Talking to Kubernetes
