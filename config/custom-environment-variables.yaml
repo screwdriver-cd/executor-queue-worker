@@ -196,7 +196,5 @@ scheduler:
         protocol: RABBITMQ_PROTOCOL
         # Exchange / router name for rabbitmq
         exchange: RABBITMQ_EXCHANGE
-        # Exchange type for rabbitmq
-        exchangeType: RABBITMQ_EXCHANGE_TYPE
         # Virtual host to connect to
         vhost: RABBITMQ_VHOST

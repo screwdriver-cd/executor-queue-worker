@@ -75,8 +75,7 @@ describe('Jobs Unit Test', () => {
         mockRabbitmqConfigObj = {
             schedulerMode: false,
             amqpURI: 'amqp://localhost:5672',
-            exchange: 'build',
-            exchangeType: 'topic'
+            exchange: 'build'
         };
 
         mockRabbitmqConfig = {
@@ -316,7 +315,6 @@ describe('Jobs Unit Test', () => {
                 assert.calledWith(mockRedisObj.hget, 'buildConfigs', fullConfig.buildId);
                 assert.calledWith(mockAmqp.connect, [amqpURI]);
                 assert.calledOnce(mockRabbitmqConnection.createChannel);
-                // assert.calledWith(mockRabbitmqCh.assertExchange, exchange, exchangeType);
                 assert.calledWith(mockRabbitmqCh.publish, exchange, 'sd', msg, {
                     contentType: 'application/json', persistent: true
                 });
