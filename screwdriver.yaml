@@ -44,10 +44,10 @@ jobs:
             - test: echo Put acceptance tests here
         environment:
             DOCKER_REPO: screwdrivercd/queue-worker
-            K8S_CONTAINER: screwdriver-redis-worker
+            K8S_CONTAINER: screwdriver-rabbitmq-scheduler
             K8S_IMAGE: screwdrivercd/queue-worker
             K8S_HOST: api.ossd.k8s.screwdriver.cd
-            K8S_DEPLOYMENT: redis-worker-beta
+            K8S_DEPLOYMENT: rabbitmq-scheduler-beta
         secrets:
             # Talking to Kubernetes
             - K8S_TOKEN
@@ -63,10 +63,10 @@ jobs:
             - test: echo Put acceptance tests here
         environment:
             DOCKER_REPO: screwdrivercd/queue-worker
-            K8S_CONTAINER: screwdriver-redis-worker
+            K8S_CONTAINER: screwdriver-rabbitmq-scheduler
             K8S_IMAGE: screwdrivercd/queue-worker
             K8S_HOST: api.ossd.k8s.screwdriver.cd
-            K8S_DEPLOYMENT: redis-worker
+            K8S_DEPLOYMENT: rabbitmq-scheduler
         secrets:
             # Talking to Kubernetes
             - K8S_TOKEN
