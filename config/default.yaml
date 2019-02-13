@@ -111,6 +111,8 @@ plugins:
       blockTimeout: 120
       # job blocked by itself
       blockedBySelf: true
+      # enable collapse feature or not
+      collapse: true
 
 # Run queue-worker as a scheduler, instead of calling executor to start/stop builds, push it to rabbitmq
 scheduler:
