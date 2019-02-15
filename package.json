@@ -40,21 +40,21 @@
     "eslint-config-screwdriver": "^3.0.1",
     "jenkins-mocha": "^6.0.0",
     "mockery": "^2.1.0",
-    "sinon": "^7.1.1"
+    "sinon": "^7.2.3"
   },
   "dependencies": {
-    "amqp-connection-manager": "^2.2.0",
-    "amqplib": "^0.5.2",
+    "amqp-connection-manager": "^2.3.0",
+    "amqplib": "^0.5.3",
     "config": "^1.31.0",
     "hoek": "^5.0.4",
     "ioredis": "^3.2.2",
-    "node-resque": "^5.3.2",
+    "node-resque": "^5.5.3",
     "request": "^2.88.0",
     "screwdriver-executor-docker": "^3.2.0",
-    "screwdriver-executor-jenkins": "^4.2.0",
-    "screwdriver-executor-k8s": "^13.3.5",
-    "screwdriver-executor-k8s-vm": "^2.8.4",
-    "screwdriver-executor-router": "^1.0.8",
+    "screwdriver-executor-jenkins": "^4.2.3",
+    "screwdriver-executor-k8s": "^13.4.0",
+    "screwdriver-executor-k8s-vm": "^2.9.0",
+    "screwdriver-executor-router": "^1.0.11",
     "winston": "^2.4.4"
   },
   "release": {
