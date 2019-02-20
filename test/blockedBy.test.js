@@ -245,6 +245,36 @@ describe('Plugin Test', () => {
                 });
             });
 
+            it('do not collapse if default collapse is false', async () => {
+                blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
+                    blockedBySelf: true,
+                    collapse: false
+                });
+                mockRedis.get.withArgs(`${runningJobsPrefix}111`).resolves('123');
+                mockRedis.lrange.resolves(['2', '1']);
+                helperMock.updateBuildStatus.yieldsAsync(null, {});
+                await blockedBy.beforePerform();
+                assert.equal(mockRedis.get.getCall(0).args[0], deleteKey);
+                assert.equal(mockRedis.get.getCall(1).args[0], runningKey);
+                assert.equal(mockRedis.get.getCall(2).args[0], `last_${runningKey}`);
+                assert.equal(mockRedis.get.getCall(3).args[0], `${runningJobsPrefix}111`);
+                assert.equal(mockRedis.get.getCall(4).args[0], `${runningJobsPrefix}222`);
+                assert.notCalled(mockRedis.set);
+                assert.notCalled(mockRedis.expire);
+                assert.notCalled(mockRedis.lrem);
+                assert.calledWith(mockRedis.rpush,
+                    `${waitingJobsPrefix}${jobId}`, buildId);
+                assert.calledOnce(helperMock.updateBuildStatus);
+                assert.calledWith(mockWorker.queueObject.enqueueIn,
+                    DEFAULT_ENQUEUETIME * 1000 * 60, mockQueue, mockFunc, mockArgs);
+                assert.calledWith(helperMock.updateBuildStatus, {
+                    buildId,
+                    redisInstance: mockRedis,
+                    status: 'BLOCKED',
+                    statusMessage: 'Blocked by these running build(s): 123'
+                });
+            });
+
             it('do not collapse build no longer in waiting queue', async () => {
                 blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
                     blockedBySelf: true,
