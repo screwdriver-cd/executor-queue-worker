@@ -79,12 +79,16 @@ executor:
                     low: K8S_CPU_LOW
                     high: K8S_CPU_HIGH
                     turbo: K8S_CPU_TURBO
+                    # upper bound for user custom cpu
+                    max: K8S_CPU_MAX
                 # Memory in GB
                 memory:
                     micro: K8S_MEMORY_MICRO
                     low: K8S_MEMORY_LOW
                     high: K8S_MEMORY_HIGH
                     turbo: K8S_MEMORY_TURBO
+                    # upper bound for user custom memory
+                    max: K8S_MEMORY_MAX
                 disk:
                   high: K8S_DISK_LABEL
                   speed: K8S_DISK_SPEED_LABEL

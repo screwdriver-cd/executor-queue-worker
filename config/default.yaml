@@ -51,12 +51,16 @@ executor:
                     low: 2
                     high: 6
                     turbo: 12
+                    # upper bound for user custom cpu
+                    max: 12
                 memory:
                     # Memory in GB
                     micro: 1
                     low: 2
                     high: 12
                     turbo: 16
+                    # upper bound for user custom memory
+                    max: 16
             # Default build timeout for all builds in this cluster
             buildTimeout: 90
             # Default max build timeout
