@@ -40,7 +40,7 @@
     "eslint-config-screwdriver": "^3.0.1",
     "jenkins-mocha": "^6.0.0",
     "mockery": "^2.1.0",
-    "sinon": "^7.2.5"
+    "sinon": "^7.2.7"
   },
   "dependencies": {
     "amqp-connection-manager": "^2.3.0",

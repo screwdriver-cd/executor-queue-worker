@@ -7,6 +7,7 @@ const sinon = require('sinon');
 sinon.assert.expose(assert, { prefix: '' });
 
 describe('Plugin Test', () => {
+    const BLOCK_TIMEOUT_BUFFER = 30;
     const DEFAULT_BLOCKTIMEOUT = 120;
     const DEFAULT_ENQUEUETIME = 1;
     const jobId = 777;
@@ -118,6 +119,27 @@ describe('Plugin Test', () => {
                 await blockedBy.beforePerform();
                 assert.calledWith(mockRedis.set, key, buildId);
                 assert.calledWith(mockRedis.expire, key, DEFAULT_BLOCKTIMEOUT * 60);
+                assert.notCalled(mockWorker.queueObject.enqueueIn);
+                assert.calledWith(mockRedis.get, runningKey);
+                assert.calledWith(mockRedis.get, deleteKey);
+                assert.calledWith(mockRedis.get, `${runningJobsPrefix}111`);
+                assert.calledWith(mockRedis.get, `${runningJobsPrefix}222`);
+            });
+
+            it('proceeds if not blocked and set block timeout based on build timeout', async () => {
+                const buildConfig = {
+                    apiUri: 'foo.bar',
+                    token: 'fake',
+                    annotations: {
+                        'screwdriver.cd/timeout': 200
+                    }
+                };
+
+                mockRedis.hget.resolves(JSON.stringify(buildConfig));
+                mockRedis.lrange.resolves([]);
+                await blockedBy.beforePerform();
+                assert.calledWith(mockRedis.set, key, buildId);
+                assert.calledWith(mockRedis.expire, key, (200 + BLOCK_TIMEOUT_BUFFER) * 60);
                 assert.notCalled(mockWorker.queueObject.enqueueIn);
                 assert.calledWith(mockRedis.get, runningKey);
                 assert.calledWith(mockRedis.get, deleteKey);
@@ -382,6 +404,43 @@ describe('Plugin Test', () => {
                     redisInstance: mockRedis,
                     status: 'COLLAPSED',
                     statusMessage: 'Collapsed to build: 4'
+                });
+            });
+
+            it('do not collapse blocked build if user opts out', async () => {
+                blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
+                    blockedBySelf: true,
+                    collapse: true
+                });
+                const buildConfig = {
+                    apiUri: 'foo.bar',
+                    token: 'fake',
+                    annotations: {
+                        'screwdriver.cd/timeout': 200,
+                        'screwdriver.cd/collapseBuilds': false
+                    }
+                };
+
+                mockRedis.hget.resolves(JSON.stringify(buildConfig));
+                mockRedis.get.withArgs(`${runningJobsPrefix}111`).resolves('123');
+                mockRedis.get.withArgs(`last_${runningKey}`).resolves('4');
+                helperMock.updateBuildStatus.yieldsAsync(null, {});
+                await blockedBy.beforePerform();
+                assert.equal(mockRedis.get.getCall(0).args[0], deleteKey);
+                assert.equal(mockRedis.get.getCall(1).args[0], runningKey);
+                assert.equal(mockRedis.get.getCall(2).args[0], `last_${runningKey}`);
+                assert.notCalled(mockRedis.set);
+                assert.notCalled(mockRedis.expire);
+                assert.notCalled(mockRedis.lrem);
+                assert.calledWith(mockRedis.rpush,
+                    `${waitingJobsPrefix}${jobId}`, buildId);
+                assert.calledWith(mockWorker.queueObject.enqueueIn,
+                    DEFAULT_ENQUEUETIME * 1000 * 60, mockQueue, mockFunc, mockArgs);
+                assert.calledWith(helperMock.updateBuildStatus, {
+                    buildId: 3,
+                    redisInstance: mockRedis,
+                    status: 'BLOCKED',
+                    statusMessage: 'Blocked by these running build(s): 123'
                 });
             });
 
