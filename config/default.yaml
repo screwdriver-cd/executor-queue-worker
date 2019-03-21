@@ -7,6 +7,7 @@ executor:
         kubernetes:
             # The host or IP of the kubernetes cluster
             host: kubernetes.default
+            dockerFeatureEnabled: false
             resources:
                 cpu:
                     # Number of cpu cores
