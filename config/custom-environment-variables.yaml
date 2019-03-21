@@ -12,7 +12,9 @@ executor:
             # The jwt token used for authenticating kubernetes requests
             token: K8S_TOKEN
             jobsNamespace: K8S_JOBS_NAMESPACE
-             # Resources for build pod
+            # enable docker in docker on the k8 executor
+            dockerFeatureEnabled: DOCKER_FEATURE_ENABLED
+            # Resources for build pod
             resources:
                 # Number of cpu cores
                 cpu:
