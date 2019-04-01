@@ -158,6 +158,8 @@ executor:
 
 ecosystem:
     # URL for the User Interface
+    ui: ECOSYSTEM_UI
+    # URL for the API
     api: ECOSYSTEM_API
     # Externally routable URL for the Artifact Store
     store: ECOSYSTEM_STORE
