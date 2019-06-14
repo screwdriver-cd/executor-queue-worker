@@ -63,6 +63,10 @@ executor:
             breaker:
                 # in milliseconds
                 timeout: CIRCUIT_TIMEOUT
+        requestretry:
+            # in milliseconds
+            retryDelay: REQUEST_RETRYDELAY
+            maxAttempts: REQUEST_MAXATTEMPTS
     k8s-vm:
       options:
         # Configuration of Docker
@@ -122,6 +126,10 @@ executor:
             breaker:
                 # in milliseconds
                 timeout: CIRCUIT_TIMEOUT
+        requestretry:
+            # in milliseconds
+            retryDelay: REQUEST_RETRYDELAY
+            maxAttempts: REQUEST_MAXATTEMPTS
     jenkins:
       options:
         jenkins:
