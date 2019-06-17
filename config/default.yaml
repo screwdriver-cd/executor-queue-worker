@@ -38,6 +38,11 @@ executor:
             breaker:
                 # in milliseconds
                 timeout: 10000
+        # requestretry configs
+        requestretry:
+            # in milliseconds
+            retryDelay: 3000
+            maxAttempts: 5
     k8s-vm:
       options:
         # Configuration of Docker
@@ -78,6 +83,11 @@ executor:
             breaker:
                 # in milliseconds
                 timeout: 10000
+        # requestretry configs
+        requestretry:
+            # in milliseconds
+            retryDelay: 3000
+            maxAttempts: 5
 #     jenkins:
 #       options:
 #         # Configuration of Jenkins
