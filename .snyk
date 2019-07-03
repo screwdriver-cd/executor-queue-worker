@@ -1,0 +1,16 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.13.5
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  SNYK-JS-LODASH-450202:
+    - screwdriver-executor-k8s > lodash:
+        patched: '2019-07-03T17:55:51.541Z'
+    - screwdriver-executor-k8s-vm > lodash:
+        patched: '2019-07-03T17:55:51.541Z'
+    - screwdriver-executor-k8s > requestretry > lodash:
+        patched: '2019-07-03T17:55:51.541Z'
+    - screwdriver-executor-k8s-vm > requestretry > lodash:
+        patched: '2019-07-03T17:55:51.541Z'
+    - screwdriver-executor-k8s-vm > eslint-plugin-import > lodash:
+        patched: '2019-07-03T17:55:51.541Z'
