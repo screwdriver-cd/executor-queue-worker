@@ -137,9 +137,9 @@ worker:
     minTaskProcessors: 1
     # maximum number of workers to spawn
     maxTaskProcessors: 10
-    # how often to check if the event loop is blocked
+    # how often to check if the event loop is blocked (ms)
     checkTimeout: 1000
-    # how long the event loop has to be delayed before considering it blocked
+    # how long the event loop has to be delayed before considering it blocked (ms)
     maxEventLoopDelay: 10
 
 # Run queue-worker as a scheduler, instead of calling executor to start/stop builds, push it to rabbitmq
