@@ -19,6 +19,12 @@ describe('Index Test', () => {
     const workerId = 1;
     const job = { args: [{ buildId: 1 }] };
     const queue = 'testbuilds';
+    const workerConfig = {
+        minTaskProcessors: 123,
+        maxTaskProcessors: 234,
+        checkTimeout: 345,
+        maxEventLoopDelay: 456
+    };
 
     let mockJobs;
     let MultiWorker;
@@ -34,6 +40,7 @@ describe('Index Test', () => {
     let processExitMock;
     let mockRedis;
     let mockRedisObj;
+    let configMock;
 
     before(() => {
         mockery.enable({
@@ -79,6 +86,10 @@ describe('Index Test', () => {
             hget: sinon.stub().resolves('{"apiUri": "foo.bar", "token": "fake"}')
         };
         mockRedis = sinon.stub().returns(mockRedisObj);
+        configMock = {
+            get: sinon.stub().returns(workerConfig)
+
+        };
 
         mockery.registerMock('ioredis', mockRedis);
         mockery.registerMock('./lib/jobs', mockJobs);
@@ -87,6 +98,7 @@ describe('Index Test', () => {
         mockery.registerMock('request', requestMock);
         mockery.registerMock('./config/redis', redisConfigMock);
         mockery.registerMock('./lib/helper', helperMock);
+        mockery.registerMock('config', configMock);
 
         // eslint-disable-next-line global-require
         index = require('../index.js');
@@ -250,17 +262,7 @@ describe('Index Test', () => {
 
     describe('multiWorker', () => {
         it('is constructed correctly', () => {
-            const expectedConfig = {
-                connection: 'mockRedisConfig',
-                queues: ['mockQueuePrefix_builds'],
-                minTaskProcessors: 1,
-                maxTaskProcessors: 10,
-                checkTimeout: 1000,
-                maxEventLoopDelay: 10,
-                toDisconnectProcessors: true
-            };
-
-            assert.calledWith(MultiWorker, sinon.match(expectedConfig), sinon.match({
+            assert.calledWith(MultiWorker, sinon.match(workerConfig), sinon.match({
                 start: mockJobs.start
             }));
         });
