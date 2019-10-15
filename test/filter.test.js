@@ -94,6 +94,14 @@ describe('Plugin Test', () => {
                 assert.isTrue(proceed);
             });
 
+            it('doesn\'t proceed if build without buildConfig landed on worker', async () => {
+                mockRedis.hget.resolves(JSON.stringify(null));
+
+                const proceed = await filter.beforePerform();
+
+                assert.isFalse(proceed);
+            });
+
             it('re-enqueue if build with buildClusterName landed on worker', async () => {
                 buildConfig.buildClusterName = 'sd';
                 mockRedis.hget.resolves(JSON.stringify(buildConfig));
@@ -113,6 +121,16 @@ describe('Plugin Test', () => {
                 const proceed = await filter.beforePerform();
 
                 assert.isTrue(proceed);
+            });
+
+            it('doesn\'t proceed if build without buildConfig landed on scheduler', async () => {
+                mockRabbitmqConfigObj.schedulerMode = true;
+                mockRabbitmqConfig.getConfig.returns(mockRabbitmqConfigObj);
+                mockRedis.hget.resolves(JSON.stringify(null));
+
+                const proceed = await filter.beforePerform();
+
+                assert.isFalse(proceed);
             });
 
             it('re-enqueue if build without buildCluster landed on scheduler', async () => {
