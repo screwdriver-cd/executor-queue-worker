@@ -222,7 +222,8 @@ describe('Plugin Test', () => {
                     buildId: 3,
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
-                    statusMessage: 'Blocked by these running build(s): 123'
+                    statusMessage: 'Blocked by these running build(s): ' +
+                    '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -263,7 +264,8 @@ describe('Plugin Test', () => {
                     buildId,
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
-                    statusMessage: 'Blocked by these running build(s): 123'
+                    statusMessage: 'Blocked by these running build(s): ' +
+                    '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -293,7 +295,8 @@ describe('Plugin Test', () => {
                     buildId,
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
-                    statusMessage: 'Blocked by these running build(s): 123'
+                    statusMessage: 'Blocked by these running build(s): ' +
+                    '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -323,7 +326,8 @@ describe('Plugin Test', () => {
                     buildId,
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
-                    statusMessage: 'Blocked by these running build(s): 123'
+                    statusMessage: 'Blocked by these running build(s): ' +
+                    '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -352,7 +356,8 @@ describe('Plugin Test', () => {
                     buildId: 3,
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
-                    statusMessage: 'Blocked by these running build(s): 123'
+                    statusMessage: 'Blocked by these running build(s): ' +
+                    '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -379,7 +384,8 @@ describe('Plugin Test', () => {
                     buildId: 3,
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
-                    statusMessage: 'Blocked by these running build(s): 123'
+                    statusMessage: 'Blocked by these running build(s): ' +
+                    '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -440,7 +446,8 @@ describe('Plugin Test', () => {
                     buildId: 3,
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
-                    statusMessage: 'Blocked by these running build(s): 123'
+                    statusMessage: 'Blocked by these running build(s): ' +
+                    '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -521,7 +528,8 @@ describe('Plugin Test', () => {
                         buildId: 3,
                         redisInstance: mockRedis,
                         status: 'BLOCKED',
-                        statusMessage: 'Blocked by these running build(s): 2' // blocked by itself
+                        statusMessage: 'Blocked by these running build(s): ' +
+                        '<a href="/builds/2">2</a>'// blocked by itself
                     });
                 });
 
