@@ -513,17 +513,17 @@ describe('Plugin Test', () => {
                     mockRedis.lrange.resolves(['2']);
                     mockRedis.llen.resolves(1);
                     await blockedBy.beforePerform();
-                    // assert.equal(mockRedis.get.getCall(0).args[0], deleteKey);
-                    // assert.equal(mockRedis.get.getCall(1).args[0], runningKey);
-                    // assert.equal(mockRedis.get.getCall(2).args[0], `last_${runningKey}`);
-                    // assert.equal(mockRedis.get.getCall(3).args[0], `${runningJobsPrefix}111`);
-                    // assert.equal(mockRedis.get.getCall(4).args[0], `${runningJobsPrefix}222`);
-                    // assert.notCalled(mockRedis.set);
-                    // assert.notCalled(mockRedis.expire);
-                    // assert.calledWith(mockRedis.rpush,
-                    //     `${waitingJobsPrefix}${jobId}`, buildId);
-                    // assert.calledWith(mockWorker.queueObject.enqueueIn,
-                    //     DEFAULT_ENQUEUETIME * 1000 * 60, mockQueue, mockFunc, mockArgs);
+                    assert.equal(mockRedis.get.getCall(0).args[0], deleteKey);
+                    assert.equal(mockRedis.get.getCall(1).args[0], runningKey);
+                    assert.equal(mockRedis.get.getCall(2).args[0], `last_${runningKey}`);
+                    assert.equal(mockRedis.get.getCall(3).args[0], `${runningJobsPrefix}111`);
+                    assert.equal(mockRedis.get.getCall(4).args[0], `${runningJobsPrefix}222`);
+                    assert.notCalled(mockRedis.set);
+                    assert.notCalled(mockRedis.expire);
+                    assert.calledWith(mockRedis.rpush,
+                        `${waitingJobsPrefix}${jobId}`, buildId);
+                    assert.calledWith(mockWorker.queueObject.enqueueIn,
+                        DEFAULT_ENQUEUETIME * 1000 * 60, mockQueue, mockFunc, mockArgs);
                     assert.calledWith(helperMock.updateBuildStatus, {
                         buildId: 3,
                         redisInstance: mockRedis,
