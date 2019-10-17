@@ -1,10 +1,12 @@
 'use strict';
 
 const NodeResque = require('node-resque');
+const config = require('config');
 const jobs = require('./lib/jobs');
 const helper = require('./lib/helper');
 const Redis = require('ioredis');
 const winston = require('winston');
+const workerConfig = config.get('worker');
 const { connectionDetails, queuePrefix } = require('./config/redis');
 const redis = new Redis(
     connectionDetails.port, connectionDetails.host, connectionDetails.options);
@@ -34,11 +36,10 @@ async function shutDownAll(worker, scheduler) {
 const multiWorker = new NodeResque.MultiWorker({
     connection: connectionDetails,
     queues: [`${queuePrefix}builds`],
-    minTaskProcessors: 1,
-    maxTaskProcessors: 10,
-    checkTimeout: 1000,
-    maxEventLoopDelay: 10,
-    toDisconnectProcessors: true
+    minTaskProcessors: workerConfig.minTaskProcessors,
+    maxTaskProcessors: workerConfig.maxTaskProcessors,
+    checkTimeout: workerConfig.checkTimeout,
+    maxEventLoopDelay: workerConfig.maxEventLoopDelay
 }, jobs);
 
 const scheduler = new NodeResque.Scheduler({ connection: connectionDetails });

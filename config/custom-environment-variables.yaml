@@ -96,7 +96,7 @@ executor:
                     # upper bound for user custom memory
                     max: K8S_MEMORY_MAX
                 disk:
-                  high: K8S_DISK_LABEL
+                  space: K8S_DISK_LABEL
                   speed: K8S_DISK_SPEED_LABEL
             # Default build timeout for all builds in this cluster
             buildTimeout: K8S_VM_BUILD_TIMEOUT
@@ -196,6 +196,17 @@ plugins:
         blockedBySelf: PLUGIN_BLOCKEDBY_BLOCKED_BY_SELF
         # by default collapse builds or not
         collapse: PLUGIN_BLOCKEDBY_COLLAPSE
+
+worker:
+    # https://github.com/taskrabbit/node-resque#multiworker-options
+    # minimum number of workers to spawn
+    minTaskProcessors: WORKER_MIN_TASK_PROCESSORS
+    # maximum number of workers to spawn
+    maxTaskProcessors: WORKER_MAX_TASK_PROCESSORS
+    # how often to check if the event loop is blocked (ms)
+    checkTimeout: WORKER_CHECK_TIMEOUT
+    # how long the event loop has to be delayed before considering it blocked (ms)
+    maxEventLoopDelay: WORKER_MAX_EVENT_LOOP_DELAY
 
 # Run queue-worker as a scheduler, instead of calling executor to start/stop builds, push it to rabbitmq
 scheduler:
