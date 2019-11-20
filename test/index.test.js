@@ -74,7 +74,8 @@ describe('Index Test', () => {
         };
         requestMock = sinon.stub();
         helperMock = {
-            updateBuildStatus: sinon.stub()
+            updateBuildStatus: sinon.stub(),
+            getLogger: () => winstonMock
         };
         processExitMock = sinon.stub();
         process.exit = processExitMock;
@@ -94,7 +95,6 @@ describe('Index Test', () => {
         mockery.registerMock('ioredis', mockRedis);
         mockery.registerMock('./lib/jobs', mockJobs);
         mockery.registerMock('node-resque', nrMockClass);
-        mockery.registerMock('winston', winstonMock);
         mockery.registerMock('request', requestMock);
         mockery.registerMock('./config/redis', redisConfigMock);
         mockery.registerMock('./lib/helper', helperMock);

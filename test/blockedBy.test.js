@@ -3,6 +3,7 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
+const logger = require('../lib/helper.js').getLogger();
 
 sinon.assert.expose(assert, { prefix: '' });
 
@@ -69,7 +70,8 @@ describe('Plugin Test', () => {
             waitingJobsPrefix
         };
         helperMock = {
-            updateBuildStatus: sinon.stub()
+            updateBuildStatus: sinon.stub(),
+            getLogger: () => logger
         };
 
         mockery.registerMock('ioredis', mockRedis);
