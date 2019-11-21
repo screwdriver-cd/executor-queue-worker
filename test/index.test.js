@@ -74,8 +74,7 @@ describe('Index Test', () => {
         };
         requestMock = sinon.stub();
         helperMock = {
-            updateBuildStatus: sinon.stub(),
-            getLogger: () => winstonMock
+            updateBuildStatus: sinon.stub()
         };
         processExitMock = sinon.stub();
         process.exit = processExitMock;
@@ -99,6 +98,7 @@ describe('Index Test', () => {
         mockery.registerMock('./config/redis', redisConfigMock);
         mockery.registerMock('./lib/helper', helperMock);
         mockery.registerMock('config', configMock);
+        mockery.registerMock('screwdriver-logger', winstonMock);
 
         // eslint-disable-next-line global-require
         index = require('../index.js');

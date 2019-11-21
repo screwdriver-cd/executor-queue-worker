@@ -3,7 +3,7 @@
 const assert = require('chai').assert;
 const mockery = require('mockery');
 const sinon = require('sinon');
-const logger = require('../lib/helper.js').getLogger();
+const logger = require('screwdriver-logger');
 
 sinon.assert.expose(assert, { prefix: '' });
 

@@ -55,7 +55,7 @@
     "screwdriver-executor-k8s": "^13.6.1",
     "screwdriver-executor-k8s-vm": "^3.0.1",
     "screwdriver-executor-router": "^1.0.11",
-    "winston": "^3.0.0"
+    "screwdriver-logger": "^1.0.0"
   },
   "release": {
     "debug": false,
