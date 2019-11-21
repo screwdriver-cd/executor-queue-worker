@@ -94,11 +94,11 @@ describe('Index Test', () => {
         mockery.registerMock('ioredis', mockRedis);
         mockery.registerMock('./lib/jobs', mockJobs);
         mockery.registerMock('node-resque', nrMockClass);
-        mockery.registerMock('winston', winstonMock);
         mockery.registerMock('request', requestMock);
         mockery.registerMock('./config/redis', redisConfigMock);
         mockery.registerMock('./lib/helper', helperMock);
         mockery.registerMock('config', configMock);
+        mockery.registerMock('screwdriver-logger', winstonMock);
 
         // eslint-disable-next-line global-require
         index = require('../index.js');
