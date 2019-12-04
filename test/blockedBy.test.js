@@ -407,7 +407,8 @@ describe('Plugin Test', () => {
                         'screwdriver.cd/timeout': 200,
                         'screwdriver.cd/collapseBuilds': false
                     },
-                    eventId: '345'
+                    eventId: '345',
+                    jobId: '777'
                 };
 
                 const buildConfig2 = {
@@ -417,7 +418,8 @@ describe('Plugin Test', () => {
                         'screwdriver.cd/timeout': 300,
                         'screwdriver.cd/collapseBuilds': false
                     },
-                    eventId: '345'
+                    eventId: '345',
+                    jobId: '777'
                 };
 
                 const buildConfig3 = {
@@ -427,7 +429,8 @@ describe('Plugin Test', () => {
                         'screwdriver.cd/timeout': 500,
                         'screwdriver.cd/collapseBuilds': false
                     },
-                    eventId: '344'
+                    eventId: '344',
+                    jobId: '111'
                 };
 
                 mockRedis.hget.withArgs(`${queuePrefix}buildConfigs`, buildId)
@@ -541,7 +544,7 @@ describe('Plugin Test', () => {
                 });
             });
 
-            it('do not re-enqueu if current build is older than waiting builds', async () => {
+            it('do not re-enqueue if current build is older than waiting builds', async () => {
                 blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
                     blockedBySelf: true,
                     collapse: true
