@@ -173,6 +173,13 @@ ecosystem:
     store: ECOSYSTEM_STORE
     # Pushgateway URL for Prometheus
     pushgatewayUrl: ECOSYSTEM_PUSHGATEWAY_URL
+    # build cache strategies: s3, disk, with s3 as default option to store cache
+    cache:
+        strategy: CACHE_STRATEGY
+        path: CACHE_PATH
+        compress: CACHE_COMPRESS
+        md5check: CACHE_MD5CHECK
+        max_size_mb: CACHE_MAX_SIZE_MB
 
 redis:
     # Host of redis cluster
