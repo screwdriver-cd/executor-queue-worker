@@ -14,10 +14,11 @@ describe('Plugin Test', () => {
     const buildId = 3;
     const buildIdStr = '3';
     const mockJob = {};
-    const mockFunc = () => {};
+    const mockFunc = () => { };
     const mockQueue = 'queuename';
     const runningJobsPrefix = 'mockRunningJobsPrefix_';
     const waitingJobsPrefix = 'mockRunningJobsPrefix_';
+    const queuePrefix = undefined;
     const deleteKey = `deleted_${jobId}_${buildId}`;
     const runningKey = `${runningJobsPrefix}777`;
     const key = `${runningJobsPrefix}${jobId}`;
@@ -80,7 +81,8 @@ describe('Plugin Test', () => {
         BlockedBy = require('../lib/BlockedBy.js').BlockedBy;
 
         blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
-            blockedBySelf: true });
+            blockedBySelf: true
+        });
     });
 
     afterEach(() => {
@@ -223,7 +225,7 @@ describe('Plugin Test', () => {
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
                     statusMessage: 'Blocked by these running build(s): ' +
-                    '<a href="/builds/123">123</a>'
+                        '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -250,7 +252,7 @@ describe('Plugin Test', () => {
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
                     statusMessage: 'Blocked by these running build(s): ' +
-                    '<a href="/builds/123">123</a>, <a href="/builds/456">456</a>'
+                        '<a href="/builds/123">123</a>, <a href="/builds/456">456</a>'
                 });
             });
 
@@ -292,7 +294,7 @@ describe('Plugin Test', () => {
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
                     statusMessage: 'Blocked by these running build(s): ' +
-                    '<a href="/builds/123">123</a>'
+                        '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -323,7 +325,7 @@ describe('Plugin Test', () => {
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
                     statusMessage: 'Blocked by these running build(s): ' +
-                    '<a href="/builds/123">123</a>'
+                        '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -354,7 +356,7 @@ describe('Plugin Test', () => {
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
                     statusMessage: 'Blocked by these running build(s): ' +
-                    '<a href="/builds/123">123</a>'
+                        '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -384,8 +386,72 @@ describe('Plugin Test', () => {
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
                     statusMessage: 'Blocked by these running build(s): ' +
-                    '<a href="/builds/123">123</a>'
+                        '<a href="/builds/123">123</a>'
                 });
+            });
+
+            it('do not re-enqueue if build from the same event id', async () => {
+                mockArgs = [{
+                    jobId,
+                    buildId,
+                    blockedBy: '3,4,5'
+                }];
+                blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
+                    blockedBySelf: true,
+                    collapse: true
+                });
+                const buildConfig1 = {
+                    apiUri: 'foo.bar',
+                    token: 'fake',
+                    annotations: {
+                        'screwdriver.cd/timeout': 200,
+                        'screwdriver.cd/collapseBuilds': false
+                    },
+                    eventId: '345',
+                    jobId: '777'
+                };
+
+                const buildConfig2 = {
+                    apiUri: 'foo.foo',
+                    token: 'morefake',
+                    annotations: {
+                        'screwdriver.cd/timeout': 300,
+                        'screwdriver.cd/collapseBuilds': false
+                    },
+                    eventId: '345',
+                    jobId: '777'
+                };
+
+                const buildConfig3 = {
+                    apiUri: 'bar.foo',
+                    token: 'stillfake',
+                    annotations: {
+                        'screwdriver.cd/timeout': 500,
+                        'screwdriver.cd/collapseBuilds': false
+                    },
+                    eventId: '344',
+                    jobId: '111'
+                };
+
+                mockRedis.hget.withArgs(`${queuePrefix}buildConfigs`, buildId)
+                    .resolves(JSON.stringify(buildConfig1));
+                mockRedis.hget.withArgs(`${queuePrefix}buildConfigs`, '4')
+                    .resolves(JSON.stringify(buildConfig2));
+                mockRedis.hget.withArgs(`${queuePrefix}buildConfigs`, '5')
+                    .resolves(JSON.stringify(buildConfig3));
+                mockRedis.get.withArgs(`${runningJobsPrefix}3`).resolves('4');
+                mockRedis.lrange.resolves(['3']);
+                helperMock.updateBuildStatus.yieldsAsync(null, {});
+                await blockedBy.beforePerform();
+                assert.equal(mockRedis.get.getCall(0).args[0], deleteKey);
+                assert.equal(mockRedis.get.getCall(1).args[0], runningKey);
+                assert.equal(mockRedis.get.getCall(2).args[0], `last_${runningKey}`);
+                assert.equal(mockRedis.get.getCall(3).args[0], `${runningJobsPrefix}3`);
+                assert.equal(mockRedis.get.getCall(4).args[0], `${runningJobsPrefix}4`);
+                assert.notCalled(mockRedis.set);
+                assert.notCalled(mockRedis.expire);
+                assert.notCalled(mockRedis.lrem);
+                assert.notCalled(mockWorker.queueObject.enqueueIn);
             });
 
             it('do not collapse if waiting build is the latest one', async () => {
@@ -412,7 +478,7 @@ describe('Plugin Test', () => {
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
                     statusMessage: 'Blocked by these running build(s): ' +
-                    '<a href="/builds/123">123</a>'
+                        '<a href="/builds/123">123</a>'
                 });
             });
 
@@ -474,11 +540,11 @@ describe('Plugin Test', () => {
                     redisInstance: mockRedis,
                     status: 'BLOCKED',
                     statusMessage: 'Blocked by these running build(s): ' +
-                    '<a href="/builds/123">123</a>'
+                        '<a href="/builds/123">123</a>'
                 });
             });
 
-            it('do not re-enqueu if current build is older than waiting builds', async () => {
+            it('do not re-enqueue if current build is older than waiting builds', async () => {
                 blockedBy = new BlockedBy(mockWorker, mockFunc, mockQueue, mockJob, mockArgs, {
                     blockedBySelf: true,
                     collapse: true
@@ -556,7 +622,7 @@ describe('Plugin Test', () => {
                         redisInstance: mockRedis,
                         status: 'BLOCKED',
                         statusMessage: 'Blocked by these running build(s): ' +
-                        '<a href="/builds/2">2</a>'// blocked by itself
+                            '<a href="/builds/2">2</a>'// blocked by itself
                     });
                 });
 
