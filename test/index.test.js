@@ -41,6 +41,7 @@ describe('Index Test', () => {
     let mockRedis;
     let mockRedisObj;
     let configMock;
+    let timeoutMock;
 
     before(() => {
         mockery.enable({
@@ -54,12 +55,12 @@ describe('Index Test', () => {
             start: sinon.stub()
         };
         MultiWorker = sinon.stub();
-        MultiWorker.prototype.start = () => {};
+        MultiWorker.prototype.start = () => { };
         MultiWorker.prototype.end = sinon.stub();
 
         Scheduler = sinon.stub();
-        Scheduler.prototype.start = () => {};
-        Scheduler.prototype.connect = async () => {};
+        Scheduler.prototype.start = () => { };
+        Scheduler.prototype.connect = async () => { };
         Scheduler.prototype.end = sinon.stub();
 
         util.inherits(MultiWorker, EventEmitter);
@@ -75,6 +76,9 @@ describe('Index Test', () => {
         requestMock = sinon.stub();
         helperMock = {
             updateBuildStatus: sinon.stub()
+        };
+        timeoutMock = {
+            check: sinon.stub()
         };
         processExitMock = sinon.stub();
         process.exit = processExitMock;
@@ -97,6 +101,7 @@ describe('Index Test', () => {
         mockery.registerMock('request', requestMock);
         mockery.registerMock('./config/redis', redisConfigMock);
         mockery.registerMock('./lib/helper', helperMock);
+        mockery.registerMock('./lib/timeout', timeoutMock);
         mockery.registerMock('config', configMock);
         mockery.registerMock('screwdriver-logger', winstonMock);
 
@@ -162,6 +167,7 @@ describe('Index Test', () => {
 
             testWorker.emit('poll', workerId, queue);
             assert.calledWith(winstonMock.info, `worker[${workerId}] polling ${queue}`);
+            assert.calledWith(timeoutMock.check);
 
             testWorker.emit('job', workerId, queue, job);
             assert.calledWith(winstonMock.info,
@@ -207,7 +213,7 @@ describe('Index Test', () => {
 
             // When updateBuildStatus succeeds
             let errMsg = `worker[${workerId}] ${JSON.stringify(job)} failure ${queue} ` +
-            `${JSON.stringify(job)} >> successfully update build status: ${failure}`;
+                `${JSON.stringify(job)} >> successfully update build status: ${failure}`;
 
             helperMock.updateBuildStatus.yieldsAsync(null, {});
             testWorker.emit('failure', workerId, queue, job, failure);
@@ -220,7 +226,8 @@ describe('Index Test', () => {
             const response = { statusCode: 500 };
 
             errMsg = `worker[${workerId}] ${job} failure ${queue} ` +
-            `${JSON.stringify(job)} >> ${failure} ${updateStatusError} ${JSON.stringify(response)}`;
+                `${JSON.stringify(job)} >> ${failure} ` +
+                `${updateStatusError} ${JSON.stringify(response)}`;
 
             helperMock.updateBuildStatus.yieldsAsync(updateStatusError, { statusCode: 500 });
             testWorker.emit('failure', workerId, queue, job, failure);
