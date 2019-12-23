@@ -3,6 +3,7 @@
 const NodeResque = require('node-resque');
 const config = require('config');
 const jobs = require('./lib/jobs');
+const timeout = require('./lib/timeout');
 const helper = require('./lib/helper');
 const Redis = require('ioredis');
 const logger = require('screwdriver-logger');
@@ -57,8 +58,10 @@ async function boot() {
         logger.info(`worker[${workerId}] ended`));
     multiWorker.on('cleaning_worker', (workerId, worker, pid) =>
         logger.info(`cleaning old worker ${worker} pid ${pid}`));
-    multiWorker.on('poll', (workerId, queue) =>
-        logger.info(`worker[${workerId}] polling ${queue}`));
+    multiWorker.on('poll', async (workerId, queue) => {
+        logger.info(`worker[${workerId}] polling ${queue}`);
+        await timeout.check(redis, queue);
+    });
     multiWorker.on('job', (workerId, queue, job) =>
         logger.info(`worker[${workerId}] working job ${queue} ${JSON.stringify(job)}`));
     multiWorker.on('reEnqueue', (workerId, queue, job, plugin) =>
