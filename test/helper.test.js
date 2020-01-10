@@ -91,4 +91,80 @@ describe('Helper Test', () => {
             done();
         });
     });
+
+    it('logs correct message when successfully update step with code', async () => {
+        const stepName = 'wait';
+
+        mockRequest.yieldsAsync(null, { statusCode: 200 });
+
+        const res = await helper.updateStepStop({
+            redisInstance: mockRedis,
+            buildId: 1,
+            code: 3,
+            stepName
+        });
+
+        assert.calledWith(mockRedis.hget,
+            'mockQueuePrefix_buildConfigs', job.args[0].buildId);
+        assert.calledWith(mockRequest, {
+            auth: { bearer: 'fake' },
+            json: true,
+            method: 'PUT',
+            uri: `foo.bar/v4/builds/${job.args[0].buildId}/steps/${stepName}`,
+            body: {
+                endTime: new Date().toISOString(),
+                code: 3
+            }
+        });
+        assert.isUndefined(res);
+    });
+
+    it('logs correct message when fail to update step with code', async () => {
+        const stepName = 'wait';
+        const requestErr = new Error('failed to update');
+        const response = {};
+
+        mockRequest.yieldsAsync(requestErr, response);
+
+        try {
+            await helper.updateStepStop({
+                redisInstance: mockRedis,
+                buildId: 1,
+                code: 3,
+                stepName
+            });
+        } catch (err) {
+            assert.strictEqual(err.message, requestErr.message);
+        }
+
+        assert.calledWith(mockRequest, {
+            auth: { bearer: 'fake' },
+            json: true,
+            method: 'PUT',
+            uri: `foo.bar/v4/builds/${job.args[0].buildId}/steps/${stepName}`,
+            body: {
+                endTime: new Date().toISOString(),
+                code: 3
+            }
+        });
+    });
+
+    it('returns correct when get current step is called', async () => {
+        mockRequest.yieldsAsync(null, { statusCode: 200, body: { stepName: 'wait' } });
+
+        const res = await helper.getCurrentStep({
+            redisInstance: mockRedis,
+            buildId: 1
+        });
+
+        assert.calledWith(mockRedis.hget,
+            'mockQueuePrefix_buildConfigs', job.args[0].buildId);
+        assert.calledWith(mockRequest, {
+            auth: { bearer: 'fake' },
+            json: true,
+            method: 'GET',
+            uri: `foo.bar/v4/builds/${job.args[0].buildId}/steps/active`
+        });
+        assert.equal(res.stepName, 'wait');
+    });
 });
