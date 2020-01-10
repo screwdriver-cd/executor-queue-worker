@@ -1,7 +1,12 @@
 ---
 executor:
     # Default executor
-    plugin: k8s-vm
+    plugin: docker
+    docker:
+      enabled: true
+      options:
+        docker:
+            socketPath: "/var/run/docker.sock"
     k8s:
       options:
         kubernetes:
@@ -103,11 +108,11 @@ executor:
 
 ecosystem:
     # Externally routable URL for the User Interface
-    ui: https://cd.screwdriver.cd
+    ui: http://sd.ouroath.com:4200
     # Externally routable URL for the API
-    api: https://api.screwdriver.cd
+    api: http://172.130.136.59:9001
     # Externally routable URL for the Artifact Store
-    store: https://store.screwdriver.cd
+    store: http://172.130.136.59:9002
     # build cache strategies: s3, disk, with s3 as default option to store cache
     cache:
         strategy: "s3"
@@ -120,7 +125,7 @@ redis:
     # Host of redis cluster
     host: 127.0.0.1
     # Password to connect to redis cluster
-    # password: null
+    password: "p@uly101"
     # Port of redis cluster
     port: 6379
     # Prefix for the queue name
