@@ -206,5 +206,39 @@ describe('Timeout test', () => {
             assert.notCalled(mockRedis.del);
             assert.notCalled(mockRedis.lrem);
         });
+
+        it('Updatebuildstatus is called even if there are no active steps',
+            async () => {
+                const now = new Date();
+
+                now.setHours(now.getHours() - 1);
+
+                const buildId = '333';
+                const timeoutConfig = {
+                    jobId: 2,
+                    startTime: now,
+                    timeout: 50
+                };
+
+                mockRedis.hget.withArgs(`${queuePrefix}timeoutConfigs`, buildId)
+                    .resolves(JSON.stringify(timeoutConfig));
+                helperMock.getCurrentStep.resolves(null);
+
+                await timeout.check(mockRedis);
+
+                assert.notCalled(helperMock.updateStepStop);
+                assert.calledWith(helperMock.updateBuildStatus, {
+                    redisInstance: mockRedis,
+                    buildId,
+                    status: 'FAILURE',
+                    statusMessage: 'Build failed due to timeout'
+                });
+                assert.calledWith(mockRedis.hdel, `${queuePrefix}buildConfigs`, buildId);
+                assert.calledWith(mockRedis.expire, expireKey, 0);
+                assert.calledWith(mockRedis.expire, expireKey, 0);
+
+                assert.calledWith(mockRedis.del, deleteKey);
+                assert.calledWith(mockRedis.lrem, waitingKey, 0, buildId);
+            });
     });
 });
