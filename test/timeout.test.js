@@ -89,7 +89,7 @@ describe('Timeout test', () => {
                     jobId: 2,
                     jobName: 'deploy',
                     annotations: {
-                        'scredriver.cd/timeout': 50
+                        'screwdriver.cd/timeout': 50
                     },
                     apiUri: 'fake',
                     buildId,
@@ -134,7 +134,7 @@ describe('Timeout test', () => {
                     jobId: 2,
                     jobName: 'deploy',
                     annotations: {
-                        'scredriver.cd/timeout': 50
+                        'screwdriver.cd/timeout': 50
                     },
                     apiUri: 'fake',
                     buildId,
