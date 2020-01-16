@@ -94,7 +94,13 @@ describe('Helper Test', () => {
 
     it('logs correct message when successfully update step with code', async () => {
         const stepName = 'wait';
+        const dateNow = Date.now();
+        const isoTime = (new Date(dateNow)).toISOString();
+        const sandbox = sinon.sandbox.create({
+            useFakeTimers: false
+        });
 
+        sandbox.useFakeTimers(dateNow);
         mockRequest.yieldsAsync(null, { statusCode: 200 });
 
         const res = await helper.updateStepStop({
@@ -112,18 +118,25 @@ describe('Helper Test', () => {
             method: 'PUT',
             uri: `foo.bar/v4/builds/${job.args[0].buildId}/steps/${stepName}`,
             body: {
-                endTime: new Date().toISOString(),
+                endTime: isoTime,
                 code: 3
             }
         });
         assert.isUndefined(res);
+        sandbox.restore();
     });
 
     it('logs correct message when fail to update step with code', async () => {
         const stepName = 'wait';
         const requestErr = new Error('failed to update');
         const response = {};
+        const dateNow = Date.now();
+        const isoTime = (new Date(dateNow)).toISOString();
+        const sandbox = sinon.sandbox.create({
+            useFakeTimers: false
+        });
 
+        sandbox.useFakeTimers(dateNow);
         mockRequest.yieldsAsync(requestErr, response);
 
         try {
@@ -143,10 +156,11 @@ describe('Helper Test', () => {
             method: 'PUT',
             uri: `foo.bar/v4/builds/${job.args[0].buildId}/steps/${stepName}`,
             body: {
-                endTime: new Date().toISOString(),
+                endTime: isoTime,
                 code: 3
             }
         });
+        sandbox.restore();
     });
 
     it('returns correct when get current step is called', async () => {
@@ -163,7 +177,7 @@ describe('Helper Test', () => {
             auth: { bearer: 'fake' },
             json: true,
             method: 'GET',
-            uri: `foo.bar/v4/builds/${job.args[0].buildId}/steps/active`
+            uri: `foo.bar/v4/builds/${job.args[0].buildId}/steps?status=active`
         });
         assert.equal(res.stepName, 'wait');
     });
