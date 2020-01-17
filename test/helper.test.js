@@ -129,7 +129,7 @@ describe('Helper Test', () => {
     it('logs correct message when fail to update step with code', async () => {
         const stepName = 'wait';
         const requestErr = new Error('failed to update');
-        const response = {};
+        const response = [];
         const dateNow = Date.now();
         const isoTime = (new Date(dateNow)).toISOString();
         const sandbox = sinon.sandbox.create({
@@ -164,7 +164,7 @@ describe('Helper Test', () => {
     });
 
     it('returns correct when get current step is called', async () => {
-        mockRequest.yieldsAsync(null, { statusCode: 200, body: { stepName: 'wait' } });
+        mockRequest.yieldsAsync(null, { statusCode: 200, body: [{ stepName: 'wait' }] });
 
         const res = await helper.getCurrentStep({
             redisInstance: mockRedis,
